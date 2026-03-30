@@ -6,12 +6,6 @@
 
 <img src="https://media.giphy.com/media/l0HlPwMAzh13pcZ20/giphy.gif" width="300"/>
 
-### 📱 Aplicativo meteorológico leve, rápido e moderno
-
-<img src="https://skillicons.dev/icons?i=flutter,dart" />
-
-</div>
-
 
 ### 📱 Aplicativo meteorológico leve, rápido e moderno
 
