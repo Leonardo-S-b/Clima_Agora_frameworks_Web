@@ -1,17 +1,32 @@
 # 🌦️ Clima Agora (Flutter)
 
-
-
 <div align="center">
 
 <img src="https://media.giphy.com/media/l0HlPwMAzh13pcZ20/giphy.gif" width="300"/>
-
 
 ### 📱 Aplicativo meteorológico leve, rápido e moderno
 
 <img src="https://skillicons.dev/icons?i=flutter,dart" />
 
 </div>
+
+---
+
+## Interview
+
+### GIFs do app
+
+![Clima Agora - GIF 1](lib/assets/ClimaAgora.gif)
+
+![Clima Agora - GIF 2](lib/assets/ClimaAgora2.gif)
+
+### Prints do app
+
+![Clima Agora - Print 1](lib/assets/ClimaAgora.png)
+
+![Clima Agora - Print 2](lib/assets/ClimaAgora2.png)
+
+![Clima Agora - Print 3](lib/assets/ClimaAgora3.png)
 
 ---
 
@@ -27,9 +42,9 @@ A aplicação permite buscar cidades em tempo real e visualizar a temperatura at
 
 ## ✨ Funcionalidades
 
-🔍 Busca de cidades com autocomplete
-🌡️ Exibição da temperatura atual
-🌆 Background dinâmico baseado no clima
+🔍 Busca de cidades com autocomplete  
+🌡️ Exibição da temperatura atual  
+🌆 Background dinâmico baseado no clima  
 ⚡ Interface leve e rápida
 
 ---
@@ -55,7 +70,7 @@ A aplicação permite buscar cidades em tempo real e visualizar a temperatura at
 
 O projeto segue uma abordagem **Feature-Based + Clean Architecture**, com separação clara de responsabilidades:
 
-```
+```text
 lib/
  ┣ main.dart
  ┗ src/
@@ -110,26 +125,26 @@ flutter run
 * Clima atual via **Open-Meteo Forecast API**
 * Conversão de `weather_code` para UI feita em:
 
-  ```
-  weather_ui_mapper.dart
-  ```
+```text
+weather_ui_mapper.dart
+```
 
 ---
 
 ## 📈 Boas práticas aplicadas
 
-✔️ Separação por camadas
-✔️ Debounce na busca (melhora performance)
-✔️ Repositório centralizado
+✔️ Separação por camadas  
+✔️ Debounce na busca (melhora performance)  
+✔️ Repositório centralizado  
 ✔️ Código organizado e escalável
 
 ---
 
 ## 🚧 Próximos passos
 
-🔐 Persistir última cidade
-🌬️ Adicionar vento, umidade e sensação térmica
-🧪 Implementar testes unitários
+🔐 Persistir última cidade  
+🌬️ Adicionar vento, umidade e sensação térmica  
+🧪 Implementar testes unitários  
 📱 Melhorias na UI/UX
 
 ---
@@ -138,7 +153,7 @@ flutter run
 
 **Leonardo Souza Bezerra**
 
-🚀 Desenvolvedor focado em backend e arquitetura
+🚀 Desenvolvedor focado em backend e arquitetura  
 📚 Sempre evoluindo com projetos práticos
 
 ---

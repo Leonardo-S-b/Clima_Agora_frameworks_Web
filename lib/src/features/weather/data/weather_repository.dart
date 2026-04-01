@@ -2,6 +2,7 @@ import 'package:http/http.dart' as http;
 
 import '../domain/city.dart';
 import '../domain/current_weather.dart';
+import '../domain/weather_forecast.dart';
 import 'open_meteo_forecast_api.dart';
 import 'open_meteo_geocoding_api.dart';
 
@@ -28,6 +29,15 @@ class WeatherRepository {
       latitude: city.latitude,
       longitude: city.longitude,
       timezone: city.timezone,
+    );
+  }
+
+  Future<WeatherForecast> getForecastForCity(City city, {int forecastDays = 7}) {
+    return _forecast.getForecast(
+      latitude: city.latitude,
+      longitude: city.longitude,
+      timezone: city.timezone,
+      forecastDays: forecastDays,
     );
   }
 
