@@ -9,6 +9,22 @@ Aplicativo meteorológico simples em Flutter que busca cidades (Open‑Meteo Geo
 - Background dinâmico por condição do tempo (sol, nublado, chuva, neve)
 - UI leve (foco em boa performance)
 
+## Interview
+
+### GIFs do app
+
+![Clima Agora - GIF 1](lib/assets/ClimaAgora.gif)
+
+![Clima Agora - GIF 2](lib/assets/ClimaAgora2.gif)
+
+### Prints do app
+
+![Clima Agora - Print 1](lib/assets/ClimaAgora.png)
+
+![Clima Agora - Print 2](lib/assets/ClimaAgora2.png)
+
+![Clima Agora - Print 3](lib/assets/ClimaAgora3.png)
+
 ## Stack
 
 - Flutter (Material 3)
@@ -79,6 +95,34 @@ lib/
 - Separação por camadas para facilitar manutenção e testes
 - Debounce na busca para evitar excesso de requisições
 - Repositório como ponto único de acesso aos dados
+
+## Atualização do README
+
+Nesta atualização, a documentação foi ajustada para refletir as mudanças de **interface e experiência de uso** do app.
+
+### O que mudou na interface
+
+- Tela principal com visual imersivo usando imagem de fundo em tela cheia
+- Sobreposição com gradiente para melhorar legibilidade dos componentes
+- Barra superior transparente com navegação por abas: **Hoje** e **Previsão**
+- Campo de busca em estilo card com efeito translúcido (glass)
+- Lista de sugestões de cidades em card dedicado, com seleção por toque
+- Feedback visual durante busca de cidades com `LinearProgressIndicator`
+- Tratamento visual de erro para falha de busca/carregamento
+- Background dinâmico atualizado conforme condição climática da cidade selecionada
+
+### Comportamentos de UX implementados
+
+- Busca com debounce (250 ms) para reduzir chamadas excessivas de API
+- Limpeza rápida da busca pelo ícone de fechar (`X`)
+- Fechamento do teclado ao selecionar cidade
+- Atualização de estado com carregamento e erro sem travar a UI
+
+### Arquivos principais da interface
+
+- `lib/main.dart`
+- `lib/src/features/weather/presentation/weather_home_page.dart`
+- `lib/src/features/weather/presentation/weather_ui_mapper.dart`
 
 ## Próximos passos (ideias)
 
