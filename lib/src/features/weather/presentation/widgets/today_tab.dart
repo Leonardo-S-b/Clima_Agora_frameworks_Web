@@ -1,17 +1,18 @@
-import 'package:clima_agora/src/features/weather/domain/city.dart';
-import 'package:clima_agora/src/features/weather/domain/weather_forecast.dart';
-import 'package:clima_agora/src/features/weather/presentation/weather_ui_mapper.dart';
 import 'package:flutter/material.dart';
+
+import '../../domain/city.dart';
+import '../../domain/weather_forecast.dart';
+import '../weather_ui_mapper.dart';
 import 'pill.dart';
 import 'detail_tile.dart';
-
 
 class TodayTab extends StatelessWidget {
   final City? selectedCity;
   final bool loading;
   final WeatherForecast? forecast;
 
-  const TodayTab({super.key, 
+  const TodayTab({
+    super.key,
     required this.selectedCity,
     required this.loading,
     required this.forecast,
@@ -76,7 +77,10 @@ class TodayTab extends StatelessWidget {
                       runSpacing: 8,
                       children: [
                         if (tempMax != null && tempMin != null)
-                          Pill(text: '${tempMax.toStringAsFixed(0)}°/${tempMin.toStringAsFixed(0)}°'),
+                          Pill(
+                            text:
+                                '${tempMax.toStringAsFixed(0)}°/${tempMin.toStringAsFixed(0)}°',
+                          ),
                         if (current.apparentTemperatureC != null)
                           Pill(
                             text:
@@ -148,12 +152,12 @@ class TodayTab extends StatelessWidget {
                     ? '—'
                     : '${current.pressureHpa!.toStringAsFixed(0)} hPa',
               ),
-             DetailTile(
-              title: 'Dia/Noite',
-              value: current.isDay ? 'Dia' : 'Noite',
-            ),
-          ],
-        ),
+              DetailTile(
+                title: 'Dia/Noite',
+                value: current.isDay ? 'Dia' : 'Noite',
+              ),
+            ],
+          ),
         ],
       ),
     );

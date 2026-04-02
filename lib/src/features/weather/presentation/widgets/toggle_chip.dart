@@ -1,14 +1,19 @@
-
 import 'package:flutter/material.dart';
 
 class ToggleChip extends StatelessWidget {
   final bool selected;
   final String text;
+  final VoidCallback? onTap;
 
-  const ToggleChip({super.key, required this.selected, required this.text});
+  const ToggleChip({
+    super.key,
+    required this.selected,
+    required this.text,
+    this.onTap,
+  });
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    final chip = DecoratedBox(
       decoration: BoxDecoration(
         color: selected
             ? Colors.white.withValues(alpha: 0.20)
@@ -27,11 +32,21 @@ class ToggleChip extends StatelessWidget {
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
-          
         ),
-   
       ),
     );
 
+    if (onTap == null) {
+      return chip;
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: chip,
+      ),
+    );
   }
 }

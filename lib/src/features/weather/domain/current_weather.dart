@@ -1,4 +1,5 @@
 class CurrentWeather {
+  final DateTime time;
   final double temperatureC;
   final double? apparentTemperatureC;
   final int? relativeHumidity;
@@ -11,6 +12,7 @@ class CurrentWeather {
   final bool isDay;
 
   CurrentWeather({
+    required this.time,
     required this.temperatureC,
     required this.apparentTemperatureC,
     required this.relativeHumidity,
@@ -24,7 +26,11 @@ class CurrentWeather {
   });
 
   factory CurrentWeather.fromJson(Map<String, dynamic> json) {
+    final time =
+        DateTime.tryParse((json['time'] as String?) ?? '') ?? DateTime.now();
+
     return CurrentWeather(
+      time: time,
       temperatureC: (json['temperature_2m'] as num).toDouble(),
       apparentTemperatureC: (json['apparent_temperature'] as num?)?.toDouble(),
       relativeHumidity: (json['relative_humidity_2m'] as num?)?.toInt(),
