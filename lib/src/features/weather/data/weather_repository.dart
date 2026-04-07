@@ -22,7 +22,8 @@ class WeatherRepository {
     );
   }
 
-  Future<List<City>> searchCities(String query) => _geocoding.searchCities(query);
+  Future<List<City>> searchCities(String query) =>
+      _geocoding.searchCities(query);
 
   Future<CurrentWeather> getCurrentWeatherForCity(City city) {
     return _forecast.getCurrentWeather(
@@ -32,7 +33,22 @@ class WeatherRepository {
     );
   }
 
-  Future<WeatherForecast> getForecastForCity(City city, {int forecastDays = 7}) {
+  Future<CurrentWeather> getCurrentWeatherForCoordinates({
+    required double latitude,
+    required double longitude,
+    String? timezone,
+  }) {
+    return _forecast.getCurrentWeather(
+      latitude: latitude,
+      longitude: longitude,
+      timezone: timezone,
+    );
+  }
+
+  Future<WeatherForecast> getForecastForCity(
+    City city, {
+    int forecastDays = 7,
+  }) {
     return _forecast.getForecast(
       latitude: city.latitude,
       longitude: city.longitude,

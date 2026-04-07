@@ -33,4 +33,15 @@ class City {
       timezone: json['timezone'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'admin1': admin1,
+      'country': country,
+      'latitude': latitude,
+      'longitude': longitude,
+      'timezone': timezone,
+    };
+  }
 }
