@@ -125,24 +125,38 @@ Para usuários finais, a chave da IA **não fica no Flutter**. Ela fica no backe
 * Backend usa `GEMINI_API_KEY` em variável de ambiente
 * Resposta volta para o app sem expor segredo ao usuário
 
-### Configuração rápida
+### Configuração rápida (local)
 
 1. Suba o backend em `backend/` (ver [backend/README.md](backend/README.md)).
 2. Rode o app apontando para o backend:
 
 ```bash
-flutter run --dart-define=AI_BACKEND_URL=http://SEU_BACKEND:8787
+flutter run --dart-define=AI_BACKEND_URL=http://localhost:8787
 ```
 
 3. (Opcional) habilite roteamento real da viagem com OpenRouteService:
 
 ```bash
-flutter run \
-   --dart-define=AI_BACKEND_URL=http://SEU_BACKEND:8787 \
-   --dart-define=ORS_API_KEY=SUA_CHAVE_ORS
+flutter run --dart-define=AI_BACKEND_URL=http://localhost:8787 --dart-define=ORS_API_KEY=SUA_CHAVE_ORS
 ```
 
 > Sem `ORS_API_KEY`, o app usa estimativa local de distância/tempo por Haversine.
+
+### Deploy (somente Render)
+
+1. No repositório, mantenha o arquivo `render.yaml` versionado (já configurado para API + Web).
+2. No Render, clique em **New +** → **Blueprint** e selecione este repositório.
+3. Defina os segredos solicitados:
+   - Serviço `clima-agora-api`: `GEMINI_API_KEY`
+   - Serviço `clima-agora-web`: `AI_BACKEND_URL` (URL pública do `clima-agora-api`)
+4. Faça o primeiro deploy do backend, copie a URL pública e salve em `AI_BACKEND_URL` do frontend.
+5. Rebuild do serviço `clima-agora-web` para gerar o `flutter build web` com a URL correta.
+
+Exemplo de `AI_BACKEND_URL` em produção:
+
+```text
+https://clima-agora-api.onrender.com
+```
 
 ---
 

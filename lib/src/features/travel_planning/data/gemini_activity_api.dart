@@ -7,7 +7,9 @@ class GeminiActivityApi {
   final String _backendBaseUrl;
 
   GeminiActivityApi(this._client)
-    : _backendBaseUrl = const String.fromEnvironment('AIzaSyD76Tsh6lRdFY01HBsVPdLa0Sj3Y3jWwGo');
+    : _backendBaseUrl = const String.fromEnvironment(
+        'AI_BACKEND_URL',
+      ).trim();
 
   bool get isConfigured => _backendBaseUrl.trim().isNotEmpty;
 
@@ -21,11 +23,12 @@ class GeminiActivityApi {
 
   Future<String> suggest({required String prompt}) async {
     if (!isConfigured) {
-      return 'Sugestão automática indisponível no momento (backend de IA não configurado).';
+      return 'Sugestão automática indisponível: configure AI_BACKEND_URL no build e gere novo deploy.';
     }
 
     try {
-      final uri = Uri.parse('$_backendBaseUrl/travel/suggestions');
+      final normalizedBase = _backendBaseUrl.replaceFirst(RegExp(r'/+$'), '');
+      final uri = Uri.parse('$normalizedBase/travel/suggestions');
       final res = await _client.post(
         uri,
         headers: {'Content-Type': 'application/json'},
