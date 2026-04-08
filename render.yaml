@@ -1,38 +1,38 @@
 services:
-	- type: web
-		name: clima-agora-api
-		runtime: node
-		rootDir: backend
-		plan: free
-		buildCommand: npm install
-		startCommand: npm start
-		healthCheckPath: /health
-		envVars:
-			- key: NODE_VERSION
-				value: 20
-			- key: GEMINI_API_KEY
-				sync: false
+  - type: web
+    name: clima-agora-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: GEMINI_API_KEY
+        sync: false
 
-	- type: web
-		name: clima-agora-web
-		runtime: static
-		rootDir: .
-		buildCommand: |
-			git clone https://github.com/flutter/flutter.git --depth 1 -b stable /opt/render/project/flutter
-			export PATH="$PATH:/opt/render/project/flutter/bin"
-			flutter --version
-			flutter config --enable-web
-			flutter pub get
-			if [ -z "$AI_BACKEND_URL" ]; then
-				echo "AI_BACKEND_URL não configurada no Render (serviço clima-agora-web)."
-				exit 1
-			fi
-			flutter build web --release --dart-define=AI_BACKEND_URL=$AI_BACKEND_URL
-		staticPublishPath: build/web
-		routes:
-			- type: rewrite
-				source: /*
-				destination: /index.html
-		envVars:
-			- key: AI_BACKEND_URL
-				sync: false
+  - type: web
+    name: clima-agora-web
+    runtime: static
+    rootDir: .
+    buildCommand: |
+      git clone https://github.com/flutter/flutter.git --depth 1 -b stable /opt/render/project/flutter
+      export PATH="$PATH:/opt/render/project/flutter/bin"
+      flutter --version
+      flutter config --enable-web
+      flutter pub get
+      if [ -z "$AI_BACKEND_URL" ]; then
+        echo "AI_BACKEND_URL não configurada no Render (serviço clima-agora-web)."
+        exit 1
+      fi
+      flutter build web --release --dart-define=AI_BACKEND_URL=$AI_BACKEND_URL
+    staticPublishPath: build/web
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: AI_BACKEND_URL
+        sync: false
