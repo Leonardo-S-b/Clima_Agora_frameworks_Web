@@ -2,9 +2,13 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+
+
 class GeminiActivityApi {
   final http.Client _client;
   final String _backendBaseUrl;
+
+
 
   GeminiActivityApi(this._client)
     : _backendBaseUrl = const String.fromEnvironment('AI_BACKEND_URL');
