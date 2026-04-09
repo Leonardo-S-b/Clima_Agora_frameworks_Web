@@ -10,7 +10,7 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
-      - key: GEMINI_API_KEY
+      - key: AIzaSyD76Tsh6lRdFY01HBsVPdLa0Sj3Y3jWwGo
         sync: false
 
   - type: web

@@ -69,7 +69,7 @@ app.post('/travel/suggestions', async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       error: 'internal_error',
-      message: 'Erro interno ao gerar sugestões.',
+      message: 'Erro desconhecido.',
       details: error instanceof Error ? error.message : String(error),
     });
   }
