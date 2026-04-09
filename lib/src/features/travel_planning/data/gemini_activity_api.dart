@@ -9,6 +9,7 @@ class GeminiActivityApi {
   GeminiActivityApi(this._client)
     : _backendBaseUrl = const String.fromEnvironment(
         'AI_BACKEND_URL',
+        defaultValue: 'https://clima-agora-api.onrender.com',
       ).trim();
 
   bool get isConfigured => _backendBaseUrl.trim().isNotEmpty;
