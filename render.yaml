@@ -18,16 +18,19 @@ services:
     runtime: static
     rootDir: .
     buildCommand: |
-      git clone https://github.com/flutter/flutter.git --depth 1 -b stable /opt/render/project/flutter
+      if [ ! -d "/opt/render/project/flutter/bin" ]; then
+        git clone https://github.com/flutter/flutter.git --depth 1 -b stable /opt/render/project/flutter
+      fi
       export PATH="$PATH:/opt/render/project/flutter/bin"
       flutter --version
       flutter config --enable-web
+      flutter precache --web
       flutter pub get
       if [ -z "$AI_BACKEND_URL" ]; then
         echo "AI_BACKEND_URL não configurada no Render (serviço clima-agora-web)."
         exit 1
       fi
-      flutter build web --release --dart-define=AI_BACKEND_URL=$AI_BACKEND_URL
+      flutter build web --release --dart-define="AI_BACKEND_URL=$AI_BACKEND_URL"
     staticPublishPath: build/web
     routes:
       - type: rewrite
