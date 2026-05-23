@@ -1,0 +1,52 @@
+services:
+  # Backend local com hot reload.
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend-dev
+    container_name: clima-agora-backend-dev
+    environment:
+      NODE_ENV: development
+      PORT: 8787
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "8787:8787"
+    volumes:
+      # O código do backend fica espelhado para o container.
+      - ./backend:/workspace/backend
+      # Mantém node_modules dentro do container para não depender do host.
+      - backend_node_modules:/workspace/backend/node_modules
+    restart: unless-stopped
+
+  # Frontend Flutter Web em modo de desenvolvimento.
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web-dev
+    container_name: clima-agora-frontend-dev
+    environment:
+      PORT: 5173
+      # O app roda no navegador do host, então a URL precisa ser acessível fora do container.
+      AI_BACKEND_URL: ${AI_BACKEND_URL:-http://localhost:8787}
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/workspace
+      # Cache do Flutter para acelerar pub get e rebuilds.
+      - flutter_dart_tool:/workspace/.dart_tool
+      - flutter_build:/workspace/build
+      - flutter_pub_cache:/root/.pub-cache
+    depends_on:
+      backend:
+        condition: service_started
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+volumes:
+  backend_node_modules:
+  flutter_dart_tool:
+  flutter_build:
+  flutter_pub_cache:

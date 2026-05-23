@@ -1,0 +1,38 @@
+services:
+  # API do backend pronta para produção.
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend-prod
+    container_name: clima-agora-backend
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-30}
+    ports:
+      - "8787:8787"
+    restart: unless-stopped
+
+  # Frontend web estático com build compilado na imagem.
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web-prod
+      args:
+        # Em produção, use a URL pública real do backend, sem localhost.
+        AI_BACKEND_URL: ${AI_BACKEND_URL}
+    container_name: clima-agora-frontend
+    environment:
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

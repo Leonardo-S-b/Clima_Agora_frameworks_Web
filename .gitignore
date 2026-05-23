@@ -31,9 +31,12 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/android/build/
 /coverage/
 /backend/node_modules/
 /backend/.env
+/.env
+/debug.log
 
 # Symbolication related
 app.*.symbols
