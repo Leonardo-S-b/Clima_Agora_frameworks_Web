@@ -44,7 +44,8 @@ RUN apk add --no-cache curl \
 
 COPY --from=backend-build --chown=app:app /workspace/backend /app
 COPY docker/healthchecks/backend.sh /usr/local/bin/healthcheck.sh
-RUN chmod 755 /usr/local/bin/healthcheck.sh
+RUN sed -i 's/\r$//' /usr/local/bin/healthcheck.sh \
+  && chmod 755 /usr/local/bin/healthcheck.sh
 
 USER app
 EXPOSE 8787
@@ -97,8 +98,11 @@ COPY --from=web-build /workspace/build/web/ ./
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/healthchecks/frontend.sh /usr/local/bin/healthcheck.sh
 
-RUN apk add --no-cache curl \
+USER root
+RUN sed -i 's/\r$//' /usr/local/bin/healthcheck.sh \
+  && apk add --no-cache curl \
   && chmod 755 /usr/local/bin/healthcheck.sh
+USER 101
 
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["sh", "/usr/local/bin/healthcheck.sh"]
