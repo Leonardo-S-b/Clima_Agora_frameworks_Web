@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import cors from 'cors';
 import express from 'express';
+import trackingRouter from './routes/tracking.js';
 
 const app = express();
 const port = Number(process.env.PORT || 8787);
@@ -9,6 +10,9 @@ const geminiApiKey = (process.env.GEMINI_API_KEY || '').trim();
 
 app.use(cors());
 app.use(express.json({ limit: '128kb' }));
+
+// Mount tracking routes
+app.use('/travel/route-tracking', trackingRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'clima-agora-ai-backend' });

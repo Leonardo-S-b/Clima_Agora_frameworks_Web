@@ -16,7 +16,7 @@ dependencies:
   google_generative_ai: ^0.4.7
   google_maps_flutter: ^2.10.0
   flutter_riverpod: ^2.4.0
-  permission_handler: ^11.4.3
+  permission_handler: ^12.0.3
   geocoding: ^2.1.1
   lottie: ^2.6.0
   flutter_local_notifications: ^14.1.0
