@@ -2,27 +2,66 @@ import 'dotenv/config';
 
 import cors from 'cors';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
+
 import trackingRouter from './routes/tracking.js';
 
 const app = express();
+const isProduction = process.env.NODE_ENV === 'production';
 const port = Number(process.env.PORT || 8787);
 const geminiApiKey = (process.env.GEMINI_API_KEY || '').trim();
+const corsOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const trustProxy = (process.env.TRUST_PROXY || '').trim();
 
-app.use(cors());
+if (isProduction && corsOrigins.length === 0) {
+  throw new Error(
+    'CORS_ORIGIN deve ser configurada em producao com a origem publica do frontend.',
+  );
+}
+
+if (trustProxy) {
+  app.set('trust proxy', trustProxy === 'true' ? 1 : trustProxy);
+}
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || corsOrigins.length === 0 || corsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Origin nao permitida por CORS.'));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+};
+
+const travelSuggestionsLimiter = rateLimit({
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000),
+  limit: Number(process.env.RATE_LIMIT_MAX || 30),
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    error: 'rate_limited',
+    message: 'Muitas solicitacoes. Aguarde um instante e tente novamente.',
+  },
+});
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '128kb' }));
 
-// Mount tracking routes
 app.use('/travel/route-tracking', trackingRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'clima-agora-ai-backend' });
 });
 
-app.post('/travel/suggestions', async (req, res) => {
+app.post('/travel/suggestions', travelSuggestionsLimiter, async (req, res) => {
   if (!geminiApiKey) {
     return res.status(503).json({
       error: 'backend_not_configured',
-      message: 'GEMINI_API_KEY não configurada no servidor.',
+      message: 'GEMINI_API_KEY nao configurada no servidor.',
     });
   }
 
@@ -30,7 +69,7 @@ app.post('/travel/suggestions', async (req, res) => {
   if (!prompt) {
     return res.status(400).json({
       error: 'invalid_request',
-      message: 'Campo prompt é obrigatório.',
+      message: 'Campo prompt e obrigatorio.',
     });
   }
 
@@ -80,5 +119,5 @@ app.post('/travel/suggestions', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`AI backend online em http://localhost:${port}`);
+  console.log(`AI backend online na porta ${port}`);
 });

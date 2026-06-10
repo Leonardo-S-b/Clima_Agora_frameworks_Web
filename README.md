@@ -184,6 +184,23 @@ As imagens de fundo são alteradas dinamicamente conforme o clima:
 
 ## ⚙️ Como executar
 
+### Com Docker
+
+```bash
+# Desenvolvimento com hot reload
+docker compose up --build
+
+# Produção local com build de imagem
+docker compose -f docker-compose.prod.yml up --build
+```
+
+Pontos de acesso padrão:
+
+* Frontend dev: `http://localhost:5173`
+* Backend dev: `http://localhost:8787`
+* Frontend prod local: `http://localhost:8080`
+* Backend prod local: `http://localhost:8787`
+
 ```bash
 # Instalar dependências
 flutter pub get

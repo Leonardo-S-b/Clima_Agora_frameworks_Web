@@ -4,14 +4,22 @@ services:
     runtime: node
     rootDir: backend
     plan: free
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
-        value: 20
+        value: 22
       - key: GEMINI_API_KEY
         sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: TRUST_PROXY
+        value: "true"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: RATE_LIMIT_MAX
+        value: "30"
 
   - type: web
     name: clima-agora-web
@@ -30,6 +38,12 @@ services:
         echo "AI_BACKEND_URL não configurada no Render (serviço clima-agora-web)."
         exit 1
       fi
+      case "$AI_BACKEND_URL" in
+        http://localhost*|https://localhost*|http://127.0.0.1*|https://127.0.0.1*)
+          echo "AI_BACKEND_URL inválida para produção: $AI_BACKEND_URL"
+          exit 1
+          ;;
+      esac
       flutter build web --release --dart-define="AI_BACKEND_URL=$AI_BACKEND_URL"
     staticPublishPath: build/web
     routes:

@@ -1,0 +1,41 @@
+# Git e metadados da IDE
+.git
+.gitignore
+.vscode
+.idea
+
+# Artefatos do Flutter
+.dart_tool
+build
+**/build
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+
+# Artefatos nativos gerados pelo Flutter
+android/.gradle
+android/build
+ios/Pods
+ios/.symlinks
+ios/Flutter/ephemeral
+macos/Pods
+linux/build
+windows/build
+
+# Saídas e caches do backend
+backend/node_modules
+backend/.npm
+backend/npm-debug.log
+backend/yarn-error.log
+backend/dist
+backend/.env
+.env
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.temp
+
+# Arquivos locais que não precisam entrar no contexto de build
+*.iml
+*.swp
+*.swo
