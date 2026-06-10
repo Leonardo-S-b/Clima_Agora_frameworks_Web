@@ -24,6 +24,11 @@ Manter documentação viva de contexto técnico, decisões e direção arquitetu
 - Deploy Docker de produção não deve usar fallback para localhost ou backend legado; `AI_BACKEND_URL` deve apontar para a URL pública atual do servidor.
 - Backend público deve usar `CORS_ORIGIN` configurada e rate limit básico para proteger a chave da IA.
 
+## Estratégia de Merge e Versonamento (Feature Tracking)
+- **Dependencies:** Validar conflitos de `intl` e `build_runner` ao mesclar Riverpod/Freezed com o core.
+- **Backend:** Obrigatório o uso de Express Routers isolados para evitar conflitos no `server.js`.
+- **Breaking Changes:** Mudanças no contrato de clima devem manter retrocompatibilidade com a feature de busca simples.
+
 ## Direção
 1. Estabilizar e versionar contratos de API no servidor.
 2. Depois refatorar travel_planning em camadas:

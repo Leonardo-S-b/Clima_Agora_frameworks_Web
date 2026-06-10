@@ -20,7 +20,7 @@ router.post('/start', async (req, res) => {
     const origin = { lat: Number(originLat), lng: Number(originLng) };
     const destination = { lat: Number(destinationLat), lng: Number(destinationLng) };
 
-    // Step 1: Calculate full route and decode polyline
+    // Step 1: Calculate full route using Routing Service (OSRM/ORS)
     console.log('[Tracking] Starting route calculation...');
     const routeData = await calculateRoute({ origin, destination, mode: mode || 'driving' });
 

@@ -71,7 +71,7 @@ A aplicação permite buscar cidades em tempo real e visualizar a temperatura at
 * **Shared Preferences** → Persistência local de dados de usuário
 * **Node.js + Express (backend/)** → Proxy seguro para IA
 * **Open-Meteo API** → Dados climáticos em tempo real (sem necessidade de chave)
-* **OpenRouteService (opcional)** → Roteamento de carro por API key
+* **OSRM + Nominatim** → Roteamento e geocoding da viagem sem chave externa
 
 ---
 
@@ -110,7 +110,7 @@ backend/
 
 * 🔎 Open-Meteo Geocoding → Busca de cidades
 * 🌡️ Open-Meteo Forecast → Dados climáticos atuais
-* 🛣️ OpenRouteService Directions → Distância e duração entre paradas (quando `ORS_API_KEY` está configurada)
+* 🛣️ OSRM Directions + Nominatim Reverse Geocoding → Distância, duração e rótulos entre paradas
 * 🤖 Gemini (via backend) → Sugestões de atividades de viagem
 
 ---
@@ -134,13 +134,13 @@ Para usuários finais, a chave da IA **não fica no Flutter**. Ela fica no backe
 flutter run --dart-define=AI_BACKEND_URL=http://localhost:8787
 ```
 
-3. (Opcional) habilite roteamento real da viagem com OpenRouteService:
+3. O roteamento da viagem já usa OSRM/Nominatim automaticamente, sem chave:
 
 ```bash
-flutter run --dart-define=AI_BACKEND_URL=http://localhost:8787 --dart-define=ORS_API_KEY=SUA_CHAVE_ORS
+flutter run --dart-define=AI_BACKEND_URL=http://localhost:8787
 ```
 
-> Sem `ORS_API_KEY`, o app usa estimativa local de distância/tempo por Haversine.
+> Quando a API pública estiver indisponível, o app usa estimativa local por Haversine como fallback.
 
 ### Deploy (somente Render)
 
@@ -236,7 +236,7 @@ weather_ui_mapper.dart
 ## 🆕 Atualizações recentes (07/04/2026)
 
 * Adicionada a aba **Planeje Sua Viagem** com múltiplas cidades de parada.
-* Implementado cálculo de rota entre origem e destinos com OpenRouteService (fallback estimado sem chave).
+* Implementado cálculo de rota entre origem e destinos com OSRM/Nominatim (fallback estimado sem chave).
 * Incluídas sugestões de atividades por IA via endpoint backend `/travel/suggestions`.
 * Implementada persistência local de nome do usuário, última cidade e contagem de aberturas do app.
 * Adicionada bolha de saudação temporal com retomada da última cidade pesquisada.

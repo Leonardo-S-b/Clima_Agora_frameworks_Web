@@ -9,7 +9,7 @@
 ## 1. Executive Summary
 
 O Clima Agora será expandido para oferecer uma experiência imersiva de planejamento de viagens com acompanhamento **em tempo real** do trajeto do usuário. A feature combinará:
-- **Google Maps SDK** para renderização de mapa interativo
+- **Flutter Map (OpenStreetMap)** para renderização de mapa interativo
 - **Localização do usuário** em tempo real (GPS)
 - **Previsão climática por ponto do trajeto** (balões/ícones animados)
 - **Sugestões de atividades** ajustadas ao clima local em cada segmento
@@ -109,8 +109,8 @@ Para descobrir experiências únicas conforme caminho.
 
 ## 5. Requisitos Funcionais
 
-### RF-1: Visualização de Rota com Google Maps
-- [ ] Integrar Google Maps SDK (flutter_google_maps ou similar)
+### RF-1: Visualização de Rota com Flutter Map
+- [ ] Integrar Flutter Map (OSM) para renderização
 - [ ] Renderizar rota entre ponto A e ponto B
 - [ ] Suportar múltiplos modos: dirigindo, caminhando, bicicleta
 - [ ] Permitir ajuste de rota (alternativas)
@@ -185,7 +185,7 @@ Para descobrir experiências únicas conforme caminho.
 ```
 1. Usuário abre app e seleciona "Roteiros"
 2. Escolhe origem/destino e modo (dirigindo/caminhando/bicicleta)
-3. App calcula rota e exibe mapa com Google Maps
+3. App calcula rota e exibe mapa interativo (OSM)
 4. Sistema calcula 7 pontos intermediários e busca clima
 5. Clima é renderizado como balões animados sobre mapa
 6. Usuário inicia trajeto (pressiona "Começar")
@@ -204,7 +204,7 @@ Para descobrir experiências únicas conforme caminho.
 ## 8. Escopo MVP vs. Expansão Futura
 
 ### MVP (Fase 1 - Próximos 2 sprints)
-- ✅ Google Maps renderizando rota
+✅ Mapa (OSM) renderizando rota
 - ✅ Localização em tempo real
 - ✅ Previsão climática em 5 pontos
 - ✅ Balões de clima básicos (4 ícones: sol, nuvem, chuva, vento)
@@ -242,7 +242,7 @@ Para descobrir experiências únicas conforme caminho.
 ## 10. Dependências & Riscos
 
 ### Dependências
-- ✅ Google Maps API (key já configurada no projeto)
+- ✅ OSRM / OpenRouteService (roteamento)
 - ✅ WeatherAPI / OpenWeather (integração backend)
 - ✅ Gerenciamento de permissões de localização (Flutter)
 - ✅ Geolocalização (geolocator package)
@@ -254,7 +254,6 @@ Para descobrir experiências únicas conforme caminho.
 | API Clima com rate limit | Alto | Implementar circuit breaker, cache de 5 min |
 | Bateria drenada | Médio | Otimizar frequência de updates, modo econômico |
 | Cobertura offline deficiente | Médio | Pre-cache de mapa + clima para rota 1 hora antes |
-| Google Maps costs | Médio | Monitorar usage, implementar quota limits |
 
 ---
 
@@ -287,4 +286,3 @@ Semana 9+: Fase 2 - Animações avançadas, histórico, replay
 | Product Manager | Leonardo | Jun 2026 | ☐ |
 | Tech Lead | (Tu) | Jun 2026 | ☐ |
 | Design Lead | (Design) | Jun 2026 | ☐ |
-

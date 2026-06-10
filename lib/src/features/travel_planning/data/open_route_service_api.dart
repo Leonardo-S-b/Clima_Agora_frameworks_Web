@@ -10,14 +10,10 @@ class RouteLegResult {
   const RouteLegResult({required this.distanceKm, required this.duration});
 }
 
-class OpenRouteServiceApi {
+class OsrmRouteApi {
   final http.Client _client;
-  final String _apiKey;
 
-  OpenRouteServiceApi(this._client)
-    : _apiKey = const String.fromEnvironment('ORS_API_KEY');
-
-  bool get isConfigured => _apiKey.trim().isNotEmpty;
+  OsrmRouteApi(this._client);
 
   Future<List<RouteLegResult>> getDrivingLegs({
     required double originLat,
@@ -26,69 +22,66 @@ class OpenRouteServiceApi {
   }) async {
     if (points.isEmpty) return const [];
 
-    if (!isConfigured) {
-      return _buildEstimatedLegs(
-        originLat: originLat,
-        originLon: originLon,
-        points: points,
-      );
-    }
-
     final coordinates = <List<double>>[
       [originLon, originLat],
       ...points.map((point) => [point['lon']!, point['lat']!]),
     ];
 
-    final uri = Uri.https(
-      'api.openrouteservice.org',
-      '/v2/directions/driving-car/json',
+    final uri = Uri.parse(
+      'https://router.project-osrm.org/route/v1/driving/${_encodeCoordinates(coordinates)}?overview=false&steps=false',
     );
 
-    final res = await _client.post(
-      uri,
-      headers: {'Authorization': _apiKey, 'Content-Type': 'application/json'},
-      body: jsonEncode({'coordinates': coordinates}),
-    );
+    try {
+      final res = await _client.get(uri, headers: {
+        'User-Agent': 'ClimaAgora/1.0 (+https://example.com; contact: dev@climaagora.local)',
+      });
 
-    if (res.statusCode != 200) {
+      if (res.statusCode != 200) {
+        return _buildEstimatedLegs(
+          originLat: originLat,
+          originLon: originLon,
+          points: points,
+        );
+      }
+
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      final routes = (body['routes'] as List?) ?? const [];
+      if (routes.isEmpty) {
+        return _buildEstimatedLegs(
+          originLat: originLat,
+          originLon: originLon,
+          points: points,
+        );
+      }
+
+      final firstRoute = routes.first as Map<String, dynamic>;
+      final legs = (firstRoute['legs'] as List?) ?? const [];
+      if (legs.isEmpty) {
+        return _buildEstimatedLegs(
+          originLat: originLat,
+          originLon: originLon,
+          points: points,
+        );
+      }
+
+      return legs
+          .map((leg) {
+            final map = leg as Map<String, dynamic>;
+            final distanceMeters = (map['distance'] as num?)?.toDouble() ?? 0;
+            final durationSeconds = (map['duration'] as num?)?.toDouble() ?? 0;
+            return RouteLegResult(
+              distanceKm: distanceMeters / 1000,
+              duration: Duration(seconds: durationSeconds.round()),
+            );
+          })
+          .toList(growable: false);
+    } catch {
       return _buildEstimatedLegs(
         originLat: originLat,
         originLon: originLon,
         points: points,
       );
     }
-
-    final body = jsonDecode(res.body) as Map<String, dynamic>;
-    final routes = (body['routes'] as List?) ?? const [];
-    if (routes.isEmpty) {
-      return _buildEstimatedLegs(
-        originLat: originLat,
-        originLon: originLon,
-        points: points,
-      );
-    }
-
-    final firstRoute = routes.first as Map<String, dynamic>;
-    final segments = (firstRoute['segments'] as List?) ?? const [];
-    if (segments.isEmpty) {
-      return _buildEstimatedLegs(
-        originLat: originLat,
-        originLon: originLon,
-        points: points,
-      );
-    }
-
-    return segments
-        .map((segment) {
-          final map = segment as Map<String, dynamic>;
-          final distanceMeters = (map['distance'] as num?)?.toDouble() ?? 0;
-          final durationSeconds = (map['duration'] as num?)?.toDouble() ?? 0;
-          return RouteLegResult(
-            distanceKm: distanceMeters / 1000,
-            duration: Duration(seconds: durationSeconds.round()),
-          );
-        })
-        .toList(growable: false);
   }
 
   List<RouteLegResult> _buildEstimatedLegs({
@@ -115,6 +108,10 @@ class OpenRouteServiceApi {
     }
 
     return results;
+  }
+
+  String _encodeCoordinates(List<List<double>> coordinates) {
+    return coordinates.map((pair) => '${pair[0]},${pair[1]}').join(';');
   }
 
   double _haversineKm(double lat1, double lon1, double lat2, double lon2) {

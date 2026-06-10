@@ -10,14 +10,14 @@ import 'open_route_service_api.dart';
 
 class TravelPlanningRepository {
   final WeatherRepository _weatherRepository;
-  final OpenRouteServiceApi _routeApi;
+  final OsrmRouteApi _routeApi;
 
   TravelPlanningRepository._(this._weatherRepository, this._routeApi);
 
   factory TravelPlanningRepository.create() {
     final weatherRepository = WeatherRepository.create();
     final client = http.Client();
-    final routeApi = OpenRouteServiceApi(client);
+    final routeApi = OsrmRouteApi(client);
     return TravelPlanningRepository._(weatherRepository, routeApi);
   }
 

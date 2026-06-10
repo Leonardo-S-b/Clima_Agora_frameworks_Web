@@ -1,52 +1,119 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
-part 'route_tracking.freezed.dart';
+class RouteTrackingState {
+  const RouteTrackingState({
+    required this.userPosition,
+    required this.routePoints,
+    required this.intermediatePoints,
+    required this.progress,
+    required this.isTracking,
+    required this.startedAt,
+  });
 
-@freezed
-class RouteTrackingState with _$RouteTrackingState {
-  const factory RouteTrackingState({
-    required LatLng userPosition,
-    required List<LatLng> routePoints,
-    required List<IntermediatePoint> intermediatePoints,
-    required RouteProgress progress,
-    required bool isTracking,
-    required DateTime? startedAt,
-  }) = _RouteTrackingState;
+  final LatLng userPosition;
+  final List<LatLng> routePoints;
+  final List<IntermediatePoint> intermediatePoints;
+  final RouteProgress progress;
+  final bool isTracking;
+  final DateTime? startedAt;
+
+  RouteTrackingState copyWith({
+    LatLng? userPosition,
+    List<LatLng>? routePoints,
+    List<IntermediatePoint>? intermediatePoints,
+    RouteProgress? progress,
+    bool? isTracking,
+    DateTime? startedAt,
+  }) {
+    return RouteTrackingState(
+      userPosition: userPosition ?? this.userPosition,
+      routePoints: routePoints ?? this.routePoints,
+      intermediatePoints: intermediatePoints ?? this.intermediatePoints,
+      progress: progress ?? this.progress,
+      isTracking: isTracking ?? this.isTracking,
+      startedAt: startedAt ?? this.startedAt,
+    );
+  }
 }
 
-@freezed
-class IntermediatePoint with _$IntermediatePoint {
-  const factory IntermediatePoint({
-    required int index,
-    required LatLng coordinates,
-    required String label,
-    required WeatherSnapshot weather,
-    required double distanceFromStart,
-    required Duration estimatedTimeToReach,
-  }) = _IntermediatePoint;
+class IntermediatePoint {
+  const IntermediatePoint({
+    required this.index,
+    required this.coordinates,
+    required this.label,
+    required this.weather,
+    required this.distanceFromStart,
+    required this.estimatedTimeToReach,
+    this.suggestedActivities = const [],
+  });
+
+  final int index;
+  final LatLng coordinates;
+  final String label;
+  final WeatherSnapshot weather;
+  final double distanceFromStart;
+  final Duration estimatedTimeToReach;
+  final List<ActivitySuggestion> suggestedActivities;
 }
 
-@freezed
-class WeatherSnapshot with _$WeatherSnapshot {
-  const factory WeatherSnapshot({
-    required double temperature,
-    required int humidity,
-    required double windSpeed,
-    required int rainChance,
-    required String condition,
-    required DateTime fetchedAt,
-  }) = _WeatherSnapshot;
+class WeatherSnapshot {
+  const WeatherSnapshot({
+    required this.temperature,
+    required this.humidity,
+    required this.windSpeed,
+    required this.rainChance,
+    required this.condition,
+    required this.fetchedAt,
+  });
+
+  final double temperature;
+  final int humidity;
+  final double windSpeed;
+  final int rainChance;
+  final String condition;
+  final DateTime fetchedAt;
 }
 
-@freezed
-class RouteProgress with _$RouteProgress {
-  const factory RouteProgress({
-    required double percentComplete,
-    required Duration timeElapsed,
-    required Duration estimatedTimeRemaining,
-    required double distanceTravelledKm,
-    required double totalDistanceKm,
-    required int nextIntermediatePointIndex,
-  }) = _RouteProgress;
+class RouteProgress {
+  const RouteProgress({
+    required this.percentComplete,
+    required this.timeElapsed,
+    required this.estimatedTimeRemaining,
+    required this.distanceTravelledKm,
+    required this.totalDistanceKm,
+    required this.nextIntermediatePointIndex,
+  });
+
+  final double percentComplete;
+  final Duration timeElapsed;
+  final Duration estimatedTimeRemaining;
+  final double distanceTravelledKm;
+  final double totalDistanceKm;
+  final int nextIntermediatePointIndex;
+}
+
+class ActivitySuggestion {
+  const ActivitySuggestion({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.suitability,
+    required this.reason,
+  });
+
+  final String id;
+  final String name;
+  final String type;
+  final double suitability;
+  final String reason;
+
+  factory ActivitySuggestion.fromJson(Map<String, dynamic> json) {
+    return ActivitySuggestion(
+      id: (json['id'] as String?)?.trim() ?? '',
+      name: (json['name'] as String?)?.trim() ?? 'Atividade',
+      type: (json['type'] as String?)?.trim() ?? 'outdoor',
+      suitability: (json['suitability'] as num?)?.toDouble() ?? 0,
+      reason: (json['reason'] as String?)?.trim() ?? '',
+    );
+  }
 }

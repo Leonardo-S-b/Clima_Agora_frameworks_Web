@@ -4,9 +4,6 @@
 
 ### Infraestrutura
 - [ ] Contatar WeatherAPI e subscrever tier Pro (~$99/mês)
-- [ ] Gerar/validar Google Maps API key em Render
-- [ ] Provisionar Redis em Render (se não houver)
-- [ ] Criar novo projeto no Google Cloud Console para Google Maps
 - [ ] Adicionar variáveis ao Render:
   - [ ] `WEATHER_API_KEY`
   - [ ] `OPEN_ROUTE_SERVICE_KEY` (opcional)
@@ -26,22 +23,23 @@
 
 ---
 
-## 🔧 Sprint 1: Google Maps Setup & GPS Tracking (Semana 1-2)
+## 🔧 Sprint 1: Open-Source Map Setup & GPS Tracking (Semana 1-2)
 
 ### Frontend: Dependências
-- [ ] Adicionar `google_maps_flutter: ^2.10.0` ao pubspec.yaml
-- [ ] Adicionar `geolocator: ^11.0.0`
+- [ ] Adicionar `flutter_map: ^7.0.2` ao pubspec.yaml
+- [ ] Adicionar `latlong2: ^0.9.1`
+- [ ] Adicionar `geolocator: ^14.0.2`
 - [ ] Adicionar `geocoding: ^2.1.1`
-- [ ] Adicionar `permission_handler: ^11.4.3`
+- [ ] Adicionar `permission_handler: ^12.0.3`
 - [ ] Adicionar `riverpod: ^2.4.0`
 - [ ] Adicionar `riverpod_generator: ^2.3.0`
 - [ ] Adicionar `freezed_annotation: ^2.4.1`
 - [ ] Adicionar `intl: ^0.19.0`
 - [ ] Rodar `flutter pub get`
 
-### Frontend: Google Maps Widget
+### Frontend: OpenStreetMap Widget
 - [ ] Criar `lib/src/features/travel_tracking/widgets/route_map_widget.dart`
-  - [ ] Implementar GoogleMap widget básico
+  - [ ] Implementar FlutterMap com OpenStreetMap Tiles
   - [ ] Adicionar polyline rendering
   - [ ] Adicionar marker rendering
   - [ ] Implementar zoom/pan
@@ -74,7 +72,7 @@
 
 ### Backend: Route Service
 - [ ] Criar `backend/src/services/routing.js`
-  - [ ] `calculateRoute()` - Google Maps API
+  - [ ] `calculateRoute()` - OSRM / OpenRouteService
   - [ ] `calculateIntermediatePoints()` - Segmentar rota
   - [ ] `geocodePoint()` - Nome do local
   - [ ] Testes unitários
@@ -97,7 +95,7 @@
 - [ ] Teste unitário: Location service
 - [ ] Teste unitário: Route calculation
 - [ ] Teste integração: Start tracking endpoint
-- [ ] Teste manual: Google Maps renderiza corretamente
+- [ ] Teste manual: Mapa OSM renderiza corretamente
 - [ ] Teste manual: GPS ativa corretamente
 
 ### Entregável Sprint 1
@@ -459,4 +457,3 @@ R: Após validar MVP em produção por 2-4 semanas.
 
 **P: Posso usar apenas OpenWeather grátis?**  
 R: Possível, mas 1000 calls/dia pode ser limitador. Pro tier recomendado.
-

@@ -12,8 +12,8 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Flutter Web/Mobile App                       │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐       │
-│  │ Google Maps  │  │ GPS Tracking │  │  Clima Widgets   │       │
-│  │   Widget     │  │   (Stream)   │  │   (Animadas)     │       │
+│  │ Flutter Map  │  │ GPS Tracking │  │  Clima Widgets   │       │
+│  │   (OSM)      │  │   (Stream)   │  │   (Animadas)     │       │
 │  └──────────────┘  └──────────────┘  └──────────────────┘       │
 │         │                 │                     │                 │
 └─────────│─────────────────│─────────────────────│────────────────┘
@@ -28,32 +28,30 @@
         ┌───────────────────┼───────────────────┐
         │                   │                   │
     ┌───▼────┐         ┌────▼─────┐        ┌───▼──────┐
-    │ Google │         │ WeatherAPI│       │ OpenRoute│
-    │ Maps   │         │ / OpenW.  │       │ Service  │
-    │ API    │         │  (clima)  │       │ (rotas)  │
+    │ OSRM   │         │ WeatherAPI│       │ Open-    │
+    │ (Free) │         │ (Clima)   │       │ Meteo    │
+    │ Rota   │         │           │       │ (Clima)  │
     └────────┘         └───────────┘       └──────────┘
 ```
 
 ### Componentes Principais
 
 1. **Frontend (Flutter)**
-   - Google Maps SDK para renderização
+   - Flutter Map (OSM) para renderização
    - Geolocator para GPS tracking
    - Animações customizadas para clima
    - State management (Riverpod ou Bloc)
 
 2. **Backend (Node.js)**
    - API REST para cálculo de pontos intermediários
-   - Proxy para WeatherAPI
+   - Proxy para WeatherAPI / Open-Meteo
    - Cache de previsões climáticas
    - WebSocket para updatos em tempo real (Fase 2)
 
 3. **Serviços Externos**
-   - Google Maps API (Maps, Routes)
+   - OSRM / OpenRouteService (Rotas)
    - WeatherAPI ou OpenWeatherMap
-   - OpenRouteService (rotas alternativas)
 
----
 
 ## 2. SPEC Frontend: Flutter
 
@@ -654,8 +652,8 @@ const activeSessions = new Map();
 router.post('/start', async (req, res) => {
   try {
     const { originLat, originLng, destinationLat, destinationLng, mode } = req.body;
-    
-    // Calcular rota usando Google Maps API
+
+    // Calcular rota usando serviço de roteamento (OSRM/ORS)
     const routeData = await calculateRoute({
       origin: { lat: originLat, lng: originLng },
       destination: { lat: destinationLat, lng: destinationLng },
@@ -1070,4 +1068,3 @@ Flutter App                    Backend                  Apis Externas
 - [ ] Testes e2e
 - [ ] Publicação MVP
 - [ ] Monitoramento em produção
-
