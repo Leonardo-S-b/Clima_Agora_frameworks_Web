@@ -1,9 +1,0 @@
-{
-    "git.ignoreLimitWarning": true,
-    "java.jdt.ls.java.home": "C:\\jdk-21",
-    "terminal.integrated.env.windows": {
-        "JAVA_HOME": "C:\\jdk-21",
-        "Path": "C:\\jdk-21\\bin;${env:Path}"
-    },
-    "cmake.sourceDirectory": "C:/Users/graci/Desktop/Projeto_clima/clima_agora/linux"
-}

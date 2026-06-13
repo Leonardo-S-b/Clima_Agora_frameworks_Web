@@ -52,3 +52,12 @@ app.*.map.json
 # Local memory/context files
 /cloudy.md
 /memories/
+
+# Local IDE/user settings
+/.vscode/settings.json
+/devtools_options.yaml
+
+# Local helper scripts and generated deploy bundles
+/vscode-*.bat
+/*.tar.gz
+/build_log.txt
