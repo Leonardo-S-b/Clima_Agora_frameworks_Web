@@ -24,77 +24,101 @@ class TravelStopCard extends StatelessWidget {
         ? 'Sem leitura do trajeto'
         : weatherLabelForCode(stop.fromPrevious.routeWeather!.weatherCode);
 
-    return Card(
-      color: Colors.white.withValues(alpha: 0.15),
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.24),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 13,
-                  backgroundColor: Colors.white.withValues(alpha: 0.22),
+                Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
                   child: Text(
                     '${index + 1}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    stop.city.label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stop.city.label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          height: 1.15,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          _MetaPill(
+                            icon: Icons.thermostat,
+                            text:
+                                '${stop.weather.temperatureC.toStringAsFixed(0)}C',
+                          ),
+                          _MetaPill(
+                            icon: Icons.route,
+                            text:
+                                '${stop.fromPrevious.distanceKm.toStringAsFixed(0)} km',
+                          ),
+                          _MetaPill(
+                            icon: Icons.schedule,
+                            text: _formatDuration(stop.fromPrevious.duration),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  onPressed: () => _openAiSuggestion(context, cityWeatherLabel),
+                  icon: const Icon(Icons.auto_awesome, size: 17),
+                  tooltip: 'Sugestao IA',
+                  style: IconButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.white.withValues(alpha: 0.10),
+                    minimumSize: const Size(36, 36),
+                    fixedSize: const Size(36, 36),
+                    padding: EdgeInsets.zero,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              'Clima da cidade: $cityWeatherLabel · ${stop.weather.temperatureC.toStringAsFixed(0)}°',
+              'Cidade: $cityWeatherLabel  |  Caminho: $routeWeatherLabel',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.9),
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'No caminho: $routeWeatherLabel',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.86),
-                fontSize: 12.5,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Trecho: ${stop.fromPrevious.distanceKm.toStringAsFixed(1)} km · ${_formatDuration(stop.fromPrevious.duration)}',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.86),
-                fontSize: 12.5,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child: OutlinedButton.icon(
-                onPressed: () => _openAiSuggestion(context, cityWeatherLabel),
-                icon: const Icon(Icons.auto_awesome, size: 16),
-                label: const Text('Sugestão IA'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.45)),
-                ),
+                color: Colors.white.withValues(alpha: 0.72),
+                fontSize: 11.5,
+                height: 1.25,
               ),
             ),
           ],
@@ -136,6 +160,32 @@ class TravelStopCard extends StatelessWidget {
     }
 
     return '${hours}h ${minutes.toString().padLeft(2, '0')}min';
+  }
+}
+
+class _MetaPill extends StatelessWidget {
+  const _MetaPill({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: Colors.white.withValues(alpha: 0.62), size: 13),
+        const SizedBox(width: 3),
+        Text(
+          text,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.78),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
   }
 }
 

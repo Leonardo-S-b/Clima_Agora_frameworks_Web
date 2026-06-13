@@ -480,41 +480,12 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
           if (_tripPlan != null) ...[
             const SizedBox(height: 16),
             _buildTrackingMap(),
-            const SizedBox(height: 12),
-            GlassCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Resumo da viagem',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Distância total: ${_tripPlan!.totalDistanceKm.toStringAsFixed(1)} km',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.88),
-                      fontSize: 13,
-                    ),
-                  ),
-                  Text(
-                    'Tempo total: ${_formatDuration(_tripPlan!.totalDuration)}',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.88),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+            _buildStopsHeader(),
+            const SizedBox(height: 8),
             ..._tripPlan!.stops.asMap().entries.map(
               (entry) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: TravelStopCard(
                   index: entry.key,
                   stop: entry.value,
@@ -529,11 +500,11 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
   }
 
   Widget _buildTrackingMap() {
-    final tracking = ref.watch(routeTrackingProvider);
     final trackingPlan = _trackingPlan;
 
     return GlassCard(
       padding: EdgeInsets.zero,
+      blurSigma: 8,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -548,40 +519,34 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
               ),
             ),
           ),
-          if (tracking != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              '${tracking.intermediatePoints.length} pontos climáticos no caminho • '
-              '${tracking.progress.totalDistanceKm.toStringAsFixed(1)} km previstos • '
-              '${tracking.progress.percentComplete.toStringAsFixed(0)}% concluido',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.84),
-                fontSize: 12.5,
+          if (trackingPlan != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                children: [
+                  _weatherSummaryRow(
+                    title: 'Agora',
+                    weather: trackingPlan.originWeather,
+                  ),
+                  const SizedBox(height: 6),
+                  _weatherSummaryRow(
+                    title: 'Destino',
+                    weather: trackingPlan.destinationWeather,
+                  ),
+                ],
               ),
-            ),
-            if (trackingPlan != null) ...[
-              const SizedBox(height: 8),
-              _weatherSummaryRow(
-                title: 'Agora',
-                weather: trackingPlan.originWeather,
-              ),
-              const SizedBox(height: 6),
-              _weatherSummaryRow(
-                title: 'Destino',
-                weather: trackingPlan.destinationWeather,
-              ),
-            ],
-            if (_trackingNotice != null) ...[
-              const SizedBox(height: 8),
-              Text(
+            )
+          else if (_trackingNotice != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Text(
                 _trackingNotice!,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.78),
                   fontSize: 12,
                 ),
               ),
-            ],
-          ],
+            ),
         ],
       ),
     );
@@ -609,6 +574,34 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildStopsHeader() {
+    return Row(
+      children: [
+        const Icon(Icons.place_outlined, color: Colors.white, size: 18),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            'Paradas da viagem',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        if (_tripPlan != null)
+          Text(
+            '${_tripPlan!.totalDistanceKm.toStringAsFixed(0)} km',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.72),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
       ],
     );
   }
@@ -970,14 +963,4 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
     );
   }
 
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes % 60;
-
-    if (hours == 0) {
-      return '${duration.inMinutes} min';
-    }
-
-    return '${hours}h ${minutes.toString().padLeft(2, '0')}min';
-  }
 }
