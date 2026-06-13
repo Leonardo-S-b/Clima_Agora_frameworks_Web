@@ -1,11 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 
 import '../../weather/domain/city.dart';
+import '../../weather/domain/current_weather.dart';
 import '../../weather/presentation/widgets/glass_card.dart';
+import '../../travel_tracking/models/route_tracking.dart';
+import '../../travel_tracking/providers/route_tracking_provider.dart';
+import '../../travel_tracking/widgets/route_map_widget.dart';
 import '../data/gemini_activity_api.dart';
 import '../data/travel_planning_repository.dart';
 import '../domain/trip_plan.dart';
@@ -13,14 +19,14 @@ import 'widgets/travel_stop_card.dart';
 
 enum OriginMode { currentLocation, manualCity }
 
-class TravelPlanningTab extends StatefulWidget {
+class TravelPlanningTab extends ConsumerStatefulWidget {
   const TravelPlanningTab({super.key});
 
   @override
-  State<TravelPlanningTab> createState() => _TravelPlanningTabState();
+  ConsumerState<TravelPlanningTab> createState() => _TravelPlanningTabState();
 }
 
-class _TravelPlanningTabState extends State<TravelPlanningTab> {
+class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
   final _repository = TravelPlanningRepository.create();
   final _aiClient = http.Client();
   late final GeminiActivityApi _aiApi;
@@ -278,6 +284,7 @@ class _TravelPlanningTabState extends State<TravelPlanningTab> {
       setState(() {
         _tripPlan = plan;
       });
+      _loadTrackingSession(plan, originCoords);
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -300,6 +307,71 @@ class _TravelPlanningTabState extends State<TravelPlanningTab> {
 
     if (_originCity == null) return null;
     return (_originCity!.latitude, _originCity!.longitude);
+  }
+
+  void _loadTrackingSession(TripPlan plan, (double, double) originCoords) {
+    final origin = LatLng(originCoords.$1, originCoords.$2);
+    final routePoints = <LatLng>[
+      origin,
+      ...plan.stops.map(
+        (stop) => LatLng(stop.city.latitude, stop.city.longitude),
+      ),
+    ];
+
+    final intermediatePoints = plan.stops.asMap().entries.map((entry) {
+      final stop = entry.value;
+      final weather = stop.fromPrevious.routeWeather ?? stop.weather;
+
+      return IntermediatePoint(
+        index: entry.key,
+        coordinates: LatLng(stop.city.latitude, stop.city.longitude),
+        label: stop.city.name,
+        weather: _toWeatherSnapshot(weather),
+        distanceFromStart: plan.stops
+            .take(entry.key + 1)
+            .fold<double>(0, (sum, item) => sum + item.fromPrevious.distanceKm),
+        estimatedTimeToReach: Duration(
+          minutes: plan.stops
+              .take(entry.key + 1)
+              .fold<int>(0, (sum, item) => sum + item.fromPrevious.duration.inMinutes),
+        ),
+      );
+    }).toList(growable: false);
+
+    ref.read(routeTrackingProvider.notifier).loadSession(
+          startPosition: origin,
+          routePoints: routePoints,
+          intermediatePoints: intermediatePoints,
+          totalDistanceKm: plan.totalDistanceKm,
+          estimatedDurationSeconds: plan.totalDuration.inSeconds,
+        );
+  }
+
+  WeatherSnapshot _toWeatherSnapshot(CurrentWeather weather) {
+    final precipitation = weather.precipitationMm ?? 0;
+
+    return WeatherSnapshot(
+      temperature: weather.temperatureC,
+      humidity: weather.relativeHumidity ?? 0,
+      windSpeed: weather.windSpeedKmh ?? 0,
+      rainChance: precipitation > 0 ? 80 : 15,
+      condition: _conditionFromWeatherCode(weather.weatherCode),
+      fetchedAt: weather.time,
+    );
+  }
+
+  String _conditionFromWeatherCode(int code) {
+    if (code == 0) return 'sunny';
+    if (code == 1 || code == 2) return 'cloudy';
+    if (code == 3 || code == 45 || code == 48) return 'foggy';
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+      return 'rainy';
+    }
+    if ((code >= 71 && code <= 77) || code == 85 || code == 86) {
+      return 'snowy';
+    }
+    if (code == 95 || code == 96 || code == 99) return 'stormy';
+    return 'unknown';
   }
 
   @override
@@ -353,6 +425,8 @@ class _TravelPlanningTabState extends State<TravelPlanningTab> {
             ),
           if (_tripPlan != null) ...[
             const SizedBox(height: 16),
+            _buildTrackingMap(),
+            const SizedBox(height: 12),
             GlassCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,6 +466,69 @@ class _TravelPlanningTabState extends State<TravelPlanningTab> {
                   stop: entry.value,
                   aiApi: _aiApi,
                 ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrackingMap() {
+    final tracking = ref.watch(routeTrackingProvider);
+
+    return GlassCard(
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: _sectionTitle('Mapa e clima do trajeto')),
+              if (tracking != null)
+                FilledButton.icon(
+                  onPressed: () async {
+                    final notifier = ref.read(routeTrackingProvider.notifier);
+                    try {
+                      tracking.isTracking
+                          ? await notifier.stopTracking()
+                          : await notifier.startTracking();
+                    } catch (_) {
+                      if (!mounted) return;
+                      setState(() {
+                        _error =
+                            'Nao foi possivel iniciar o GPS. Verifique permissao e localizacao.';
+                      });
+                    }
+                  },
+                  icon: Icon(
+                    tracking.isTracking
+                        ? Icons.pause_circle_outline
+                        : Icons.my_location,
+                  ),
+                  label: Text(
+                    tracking.isTracking ? 'Pausar GPS' : 'Acompanhar',
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: const SizedBox(
+              height: 280,
+              child: RouteMapWidget(),
+            ),
+          ),
+          if (tracking != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              '${tracking.intermediatePoints.length} pontos climáticos no caminho • '
+              '${tracking.progress.totalDistanceKm.toStringAsFixed(1)} km previstos • '
+              '${tracking.progress.percentComplete.toStringAsFixed(0)}% concluido',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.84),
+                fontSize: 12.5,
               ),
             ),
           ],
