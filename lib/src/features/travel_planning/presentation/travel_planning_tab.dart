@@ -333,7 +333,9 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
         stops: stops,
       );
 
-      ref.read(routeTrackingProvider.notifier).loadSession(
+      ref
+          .read(routeTrackingProvider.notifier)
+          .loadSession(
             startPosition: origin,
             routePoints: trackingPlan.routePoints,
             intermediatePoints: trackingPlan.intermediatePoints,
@@ -356,32 +358,41 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
       });
     }
 
-    final routePoints = <LatLng>[
-      origin,
-      ...stops,
-    ];
+    final routePoints = <LatLng>[origin, ...stops];
 
-    final intermediatePoints = plan.stops.asMap().entries.map((entry) {
-      final stop = entry.value;
-      final weather = stop.fromPrevious.routeWeather ?? stop.weather;
+    final intermediatePoints = plan.stops
+        .asMap()
+        .entries
+        .map((entry) {
+          final stop = entry.value;
+          final weather = stop.fromPrevious.routeWeather ?? stop.weather;
 
-      return IntermediatePoint(
-        index: entry.key,
-        coordinates: LatLng(stop.city.latitude, stop.city.longitude),
-        label: stop.city.name,
-        weather: _toWeatherSnapshot(weather),
-        distanceFromStart: plan.stops
-            .take(entry.key + 1)
-            .fold<double>(0, (sum, item) => sum + item.fromPrevious.distanceKm),
-        estimatedTimeToReach: Duration(
-          minutes: plan.stops
-              .take(entry.key + 1)
-              .fold<int>(0, (sum, item) => sum + item.fromPrevious.duration.inMinutes),
-        ),
-      );
-    }).toList(growable: false);
+          return IntermediatePoint(
+            index: entry.key,
+            coordinates: LatLng(stop.city.latitude, stop.city.longitude),
+            label: stop.city.name,
+            weather: _toWeatherSnapshot(weather),
+            distanceFromStart: plan.stops
+                .take(entry.key + 1)
+                .fold<double>(
+                  0,
+                  (sum, item) => sum + item.fromPrevious.distanceKm,
+                ),
+            estimatedTimeToReach: Duration(
+              minutes: plan.stops
+                  .take(entry.key + 1)
+                  .fold<int>(
+                    0,
+                    (sum, item) => sum + item.fromPrevious.duration.inMinutes,
+                  ),
+            ),
+          );
+        })
+        .toList(growable: false);
 
-    ref.read(routeTrackingProvider.notifier).loadSession(
+    ref
+        .read(routeTrackingProvider.notifier)
+        .loadSession(
           startPosition: origin,
           routePoints: routePoints,
           intermediatePoints: intermediatePoints,
@@ -522,46 +533,19 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
     final trackingPlan = _trackingPlan;
 
     return GlassCard(
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(child: _sectionTitle('Mapa e clima do trajeto')),
-              if (tracking != null)
-                FilledButton.icon(
-                  onPressed: () async {
-                    final notifier = ref.read(routeTrackingProvider.notifier);
-                    try {
-                      tracking.isTracking
-                          ? await notifier.stopTracking()
-                          : await notifier.startTracking();
-                    } catch (_) {
-                      if (!mounted) return;
-                      setState(() {
-                        _error =
-                            'Nao foi possivel iniciar o GPS. Verifique permissao e localizacao.';
-                      });
-                    }
-                  },
-                  icon: Icon(
-                    tracking.isTracking
-                        ? Icons.pause_circle_outline
-                        : Icons.my_location,
-                  ),
-                  label: Text(
-                    tracking.isTracking ? 'Pausar GPS' : 'Acompanhar',
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: const SizedBox(
-              height: 280,
-              child: RouteMapWidget(),
+            child: SizedBox(
+              height: _mapHeightFor(context),
+              child: RouteMapWidget(
+                compact: true,
+                onExpand: _openFullscreenMap,
+                onToggleTracking: _toggleTracking,
+              ),
             ),
           ),
           if (tracking != null) ...[
@@ -626,6 +610,50 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
           ),
         ),
       ],
+    );
+  }
+
+  double _mapHeightFor(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    if (size.width >= 900) {
+      return (size.height * 0.58).clamp(420.0, 620.0);
+    }
+    return (size.height * 0.52).clamp(360.0, 520.0);
+  }
+
+  Future<void> _toggleTracking() async {
+    final tracking = ref.read(routeTrackingProvider);
+    if (tracking == null) return;
+
+    final notifier = ref.read(routeTrackingProvider.notifier);
+    try {
+      tracking.isTracking
+          ? await notifier.stopTracking()
+          : await notifier.startTracking();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'Nao foi possivel iniciar o GPS. Verifique permissao e localizacao.';
+      });
+    }
+  }
+
+  Future<void> _openFullscreenMap() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          body: SafeArea(
+            child: RouteMapWidget(
+              fullscreen: true,
+              onExpand: () => Navigator.of(context).pop(),
+              onToggleTracking: _toggleTracking,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
