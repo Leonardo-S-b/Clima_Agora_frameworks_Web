@@ -209,8 +209,8 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
             point.coordinates.latitude,
             point.coordinates.longitude,
           ),
-          width: expanded ? 190 : 92,
-          height: expanded ? 132 : 86,
+          width: expanded ? 216 : 92,
+          height: expanded ? 152 : 86,
           alignment: Alignment.topCenter,
           child: _WeatherMarker(
             point: point,
@@ -241,21 +241,20 @@ class _RouteHud extends StatelessWidget {
       left: 10,
       top: 10,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: compact ? 230 : 280),
+        constraints: BoxConstraints(maxWidth: compact ? 222 : 270),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.68),
+            color: const Color(0xFF17212B).withValues(alpha: 0.82),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(
                       Icons.route_rounded,
@@ -271,9 +270,18 @@ class _RouteHud extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
+                    const Spacer(),
+                    Text(
+                      '${state.progress.percentComplete.toStringAsFixed(0)}%',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.72),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 7),
                 LinearProgressIndicator(
                   value: (state.progress.percentComplete / 100).clamp(0, 1),
                   minHeight: 5,
@@ -281,20 +289,24 @@ class _RouteHud extends StatelessWidget {
                   color: const Color(0xFF67E8F9),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                const SizedBox(height: 7),
-                Text(
-                  '${state.intermediatePoints.length} pontos climaticos no caminho',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.86),
-                    fontSize: 11.5,
-                  ),
-                ),
-                Text(
-                  '${state.progress.percentComplete.toStringAsFixed(0)}% concluido',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.76),
-                    fontSize: 11.5,
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.cloud_queue_rounded,
+                      color: Colors.white.withValues(alpha: 0.72),
+                      size: 14,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${state.intermediatePoints.length} pontos climaticos',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -324,18 +336,27 @@ class _WeatherMarker extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(expanded ? 8 : 999),
+        borderRadius: BorderRadius.circular(expanded ? 10 : 999),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOut,
           padding: EdgeInsets.all(expanded ? 10 : 0),
           decoration: BoxDecoration(
             color: expanded
-                ? Colors.black.withValues(alpha: 0.76)
+                ? const Color(0xFF17212B).withValues(alpha: 0.92)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(expanded ? 8 : 999),
+            borderRadius: BorderRadius.circular(expanded ? 10 : 999),
             border: expanded
-                ? Border.all(color: Colors.white.withValues(alpha: 0.22))
+                ? Border.all(color: color.withValues(alpha: 0.72))
+                : null,
+            boxShadow: expanded
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.26),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
+                    ),
+                  ]
                 : null,
           ),
           child: expanded
@@ -391,8 +412,16 @@ class _ExpandedWeatherMarker extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 6),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.18),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 17),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   point.label,
@@ -406,24 +435,88 @@ class _ExpandedWeatherMarker extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text('${point.weather.temperature.toStringAsFixed(0)}C agora'),
-          Text('${point.weather.humidity}% de umidade'),
-          Text('${point.weather.rainChance}% chance de chuva'),
-          Text('Vento ${point.weather.windSpeed.toStringAsFixed(0)} km/h'),
+          const SizedBox(height: 4),
           Text(
-            '${point.distanceFromStart.toStringAsFixed(0)} km desde a saida',
+            '${point.weather.temperature.toStringAsFixed(0)}C agora',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.78),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _WeatherMetricChip(
+                icon: Icons.water_drop_outlined,
+                label: '${point.weather.humidity}%',
+              ),
+              _WeatherMetricChip(
+                icon: Icons.grain_rounded,
+                label: '${point.weather.rainChance}%',
+              ),
+              _WeatherMetricChip(
+                icon: Icons.air_rounded,
+                label: '${point.weather.windSpeed.toStringAsFixed(0)} km/h',
+              ),
+              _WeatherMetricChip(
+                icon: Icons.near_me_outlined,
+                label: '${point.distanceFromStart.toStringAsFixed(0)} km',
+              ),
+            ],
           ),
           if (point.suggestedActivities.isNotEmpty) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               point.suggestedActivities.first.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.82),
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+              ),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _WeatherMetricChip extends StatelessWidget {
+  const _WeatherMetricChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white.withValues(alpha: 0.76), size: 13),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.88),
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
