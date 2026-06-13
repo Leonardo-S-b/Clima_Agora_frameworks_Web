@@ -407,18 +407,16 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
   ) {
     final points = <IntermediatePoint>[...trackingPlan.intermediatePoints];
 
-    for (var index = 0; index < plan.stops.length; index++) {
+    if (plan.stops.isNotEmpty) {
+      final index = plan.stops.length - 1;
       final stop = plan.stops[index];
-      final isDestination = index == plan.stops.length - 1;
 
       points.add(
         IntermediatePoint(
           index: 1000 + index,
           coordinates: LatLng(stop.city.latitude, stop.city.longitude),
-          label: isDestination ? 'Destino: ${stop.city.name}' : stop.city.name,
-          weather: isDestination
-              ? trackingPlan.destinationWeather
-              : _toWeatherSnapshot(stop.weather),
+          label: 'Destino: ${stop.city.name}',
+          weather: trackingPlan.destinationWeather,
           distanceFromStart: plan.stops
               .take(index + 1)
               .fold<double>(

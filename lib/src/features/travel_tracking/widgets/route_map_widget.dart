@@ -65,12 +65,6 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
           ],
         ),
         if (state != null) _RouteHud(state: state, compact: widget.compact),
-        if (state != null && _selectedPoint(state) != null)
-          _WeatherDetailsPanel(
-            point: _selectedPoint(state)!,
-            compact: widget.compact,
-            onClose: () => setState(() => _selectedPointIndex = null),
-          ),
         Positioned(
           top: 10,
           right: 10,
@@ -208,17 +202,19 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
     ];
 
     for (final point in state.intermediatePoints) {
+      final selected = _selectedPointIndex == point.index;
       markers.add(
         Marker(
           point: osm.LatLng(
             point.coordinates.latitude,
             point.coordinates.longitude,
           ),
-          width: 92,
-          height: 86,
-          alignment: Alignment.center,
+          width: selected ? 222 : 92,
+          height: selected ? 164 : 86,
+          alignment: Alignment.topCenter,
           child: _WeatherMarker(
             point: point,
+            selected: selected,
             onTap: () {
               setState(() {
                 _selectedPointIndex = _selectedPointIndex == point.index
@@ -234,15 +230,6 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
     return markers;
   }
 
-  IntermediatePoint? _selectedPoint(RouteTrackingState state) {
-    final selectedIndex = _selectedPointIndex;
-    if (selectedIndex == null) return null;
-
-    for (final point in state.intermediatePoints) {
-      if (point.index == selectedIndex) return point;
-    }
-    return null;
-  }
 }
 
 class _RouteHud extends StatelessWidget {
@@ -334,9 +321,14 @@ class _RouteHud extends StatelessWidget {
 }
 
 class _WeatherMarker extends StatelessWidget {
-  const _WeatherMarker({required this.point, required this.onTap});
+  const _WeatherMarker({
+    required this.point,
+    required this.selected,
+    required this.onTap,
+  });
 
   final IntermediatePoint point;
+  final bool selected;
   final VoidCallback onTap;
 
   @override
@@ -347,19 +339,21 @@ class _WeatherMarker extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _MarkerChip(
-              color: color,
-              icon: icon,
-              label: '${point.weather.temperature.toStringAsFixed(0)}C',
-            ),
-            const SizedBox(height: 2),
-            _PointLabel(label: point.label),
-          ],
-        ),
+        borderRadius: BorderRadius.circular(selected ? 10 : 999),
+        child: selected
+            ? _WeatherDetailsCard(point: point, color: color, icon: icon)
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _MarkerChip(
+                    color: color,
+                    icon: icon,
+                    label: '${point.weather.temperature.toStringAsFixed(0)}C',
+                  ),
+                  const SizedBox(height: 2),
+                  _PointLabel(label: point.label),
+                ],
+              ),
       ),
     );
   }
@@ -377,157 +371,119 @@ class _WeatherMarker extends StatelessWidget {
   }
 }
 
-class _WeatherDetailsPanel extends StatelessWidget {
-  const _WeatherDetailsPanel({
+class _WeatherDetailsCard extends StatelessWidget {
+  const _WeatherDetailsCard({
     required this.point,
-    required this.compact,
-    required this.onClose,
+    required this.color,
+    required this.icon,
   });
 
   final IntermediatePoint point;
-  final bool compact;
-  final VoidCallback onClose;
+  final Color color;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    final (color, icon) = _weatherStyle(point.weather.condition);
-
-    return Positioned(
-      left: 10,
-      right: 10,
-      bottom: compact ? 32 : 36,
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: compact ? 300 : 420),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: const Color(0xFF17212B).withValues(alpha: 0.94),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: color.withValues(alpha: 0.72)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.28),
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFF17212B).withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.72)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.28),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: DefaultTextStyle(
+          style: const TextStyle(color: Colors.white, fontSize: 11),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.18),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: color, size: 17),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          point.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          '${point.weather.temperature.toStringAsFixed(0)}C agora',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.74),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 9),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _WeatherMetricChip(
+                    icon: Icons.water_drop_outlined,
+                    label: '${point.weather.humidity}%',
+                  ),
+                  _WeatherMetricChip(
+                    icon: Icons.grain_rounded,
+                    label: '${point.weather.rainChance}%',
+                  ),
+                  _WeatherMetricChip(
+                    icon: Icons.air_rounded,
+                    label: '${point.weather.windSpeed.toStringAsFixed(0)} km/h',
+                  ),
+                  _WeatherMetricChip(
+                    icon: Icons.near_me_outlined,
+                    label: '${point.distanceFromStart.toStringAsFixed(0)} km',
+                  ),
+                ],
+              ),
+              if (point.suggestedActivities.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  point.suggestedActivities.first.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
                 ),
               ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: DefaultTextStyle(
-                style: const TextStyle(color: Colors.white, fontSize: 11),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.18),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(icon, color: color, size: 18),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                point.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              Text(
-                                '${point.weather.temperature.toStringAsFixed(0)}C agora',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.74),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: onClose,
-                          icon: const Icon(Icons.close_rounded),
-                          color: Colors.white.withValues(alpha: 0.82),
-                          iconSize: 18,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        _WeatherMetricChip(
-                          icon: Icons.water_drop_outlined,
-                          label: '${point.weather.humidity}%',
-                        ),
-                        _WeatherMetricChip(
-                          icon: Icons.grain_rounded,
-                          label: '${point.weather.rainChance}%',
-                        ),
-                        _WeatherMetricChip(
-                          icon: Icons.air_rounded,
-                          label:
-                              '${point.weather.windSpeed.toStringAsFixed(0)} km/h',
-                        ),
-                        _WeatherMetricChip(
-                          icon: Icons.near_me_outlined,
-                          label:
-                              '${point.distanceFromStart.toStringAsFixed(0)} km',
-                        ),
-                      ],
-                    ),
-                    if (point.suggestedActivities.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        point.suggestedActivities.first.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.82),
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+            ],
           ),
         ),
       ),
     );
-  }
-
-  (Color, IconData) _weatherStyle(String condition) {
-    return switch (condition) {
-      'sunny' => (Colors.orangeAccent, Icons.wb_sunny_rounded),
-      'cloudy' => (Colors.blueGrey, Icons.cloud_rounded),
-      'rainy' => (Colors.lightBlueAccent, Icons.umbrella_rounded),
-      'stormy' => (Colors.redAccent, Icons.thunderstorm_rounded),
-      'foggy' => (Colors.blueGrey, Icons.cloud_rounded),
-      'snowy' => (Colors.lightBlue, Icons.ac_unit_rounded),
-      _ => (Colors.tealAccent, Icons.pin_drop_rounded),
-    };
   }
 }
 
