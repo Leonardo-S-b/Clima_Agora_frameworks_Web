@@ -68,43 +68,46 @@ class RouteTrackingApi {
   }
 
   Map<String, double> _pointToJson(LatLng point) {
-    return {
-      'lat': point.latitude,
-      'lng': point.longitude,
-    };
+    return {'lat': point.latitude, 'lng': point.longitude};
   }
 
   List<LatLng> _parseRoutePoints(dynamic value) {
     final items = (value as List?) ?? const [];
-    return items.map((item) {
-      final map = item as Map<String, dynamic>;
-      return LatLng(
-        (map['lat'] as num).toDouble(),
-        (map['lng'] as num).toDouble(),
-      );
-    }).toList(growable: false);
+    return items
+        .map((item) {
+          final map = item as Map<String, dynamic>;
+          return LatLng(
+            (map['lat'] as num).toDouble(),
+            (map['lng'] as num).toDouble(),
+          );
+        })
+        .toList(growable: false);
   }
 
   List<IntermediatePoint> _parseIntermediatePoints(dynamic value) {
     final items = (value as List?) ?? const [];
-    return items.map((item) {
-      final map = item as Map<String, dynamic>;
-      final estimatedTime = map['estimatedTimeToReach'] as Map<String, dynamic>?;
+    return items
+        .map((item) {
+          final map = item as Map<String, dynamic>;
+          final estimatedTime =
+              map['estimatedTimeToReach'] as Map<String, dynamic>?;
 
-      return IntermediatePoint(
-        index: (map['index'] as num?)?.toInt() ?? 0,
-        coordinates: LatLng(
-          (map['lat'] as num).toDouble(),
-          (map['lng'] as num).toDouble(),
-        ),
-        label: (map['label'] as String?)?.trim() ?? 'Ponto do trajeto',
-        weather: _parseWeather(map['weather']),
-        distanceFromStart: (map['distanceFromStart'] as num?)?.toDouble() ?? 0,
-        estimatedTimeToReach: Duration(
-          seconds: (estimatedTime?['inSeconds'] as num?)?.round() ?? 0,
-        ),
-      );
-    }).toList(growable: false);
+          return IntermediatePoint(
+            index: (map['index'] as num?)?.toInt() ?? 0,
+            coordinates: LatLng(
+              (map['lat'] as num).toDouble(),
+              (map['lng'] as num).toDouble(),
+            ),
+            label: (map['label'] as String?)?.trim() ?? 'Ponto do trajeto',
+            weather: _parseWeather(map['weather']),
+            distanceFromStart:
+                (map['distanceFromStart'] as num?)?.toDouble() ?? 0,
+            estimatedTimeToReach: Duration(
+              seconds: (estimatedTime?['inSeconds'] as num?)?.round() ?? 0,
+            ),
+          );
+        })
+        .toList(growable: false);
   }
 
   WeatherSnapshot _parseWeather(dynamic value) {
@@ -115,9 +118,23 @@ class RouteTrackingApi {
       windSpeed: (map['windSpeed'] as num?)?.toDouble() ?? 0,
       rainChance: (map['rainChance'] as num?)?.round() ?? 0,
       condition: (map['condition'] as String?)?.trim() ?? 'unknown',
+      temperatureTrend: _parseTemperatureTrend(map['temperatureTrend']),
       fetchedAt:
           DateTime.tryParse((map['fetchedAt'] as String?) ?? '') ??
-              DateTime.now(),
+          DateTime.now(),
+    );
+  }
+
+  TemperatureTrend? _parseTemperatureTrend(dynamic value) {
+    final map = (value as Map?)?.cast<String, dynamic>();
+    if (map == null) {
+      return null;
+    }
+
+    return TemperatureTrend(
+      next3h: (map['next3h'] as num?)?.toDouble() ?? 0,
+      direction: (map['direction'] as String?)?.trim() ?? 'stable',
+      minNext6h: (map['minNext6h'] as num?)?.toDouble() ?? 0,
     );
   }
 }

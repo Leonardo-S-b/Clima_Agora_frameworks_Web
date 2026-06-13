@@ -459,6 +459,10 @@ class _WeatherDetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final trend = point.weather.temperatureTrend;
+    final trendLabel = _temperatureTrendLabel(trend);
+    final trendIcon = _temperatureTrendIcon(trend);
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: const Color(0xFF17212B).withValues(alpha: 0.94),
@@ -529,8 +533,10 @@ class _WeatherDetailsCard extends StatelessWidget {
                   ),
                   _WeatherMetricChip(
                     icon: Icons.grain_rounded,
-                    label: '${point.weather.rainChance}%',
+                    label: '${point.weather.rainChance}% chuva',
                   ),
+                  if (trendLabel != null)
+                    _WeatherMetricChip(icon: trendIcon, label: trendLabel),
                   _WeatherMetricChip(
                     icon: Icons.air_rounded,
                     label: '${point.weather.windSpeed.toStringAsFixed(0)} km/h',
@@ -559,6 +565,29 @@ class _WeatherDetailsCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String? _temperatureTrendLabel(TemperatureTrend? trend) {
+    if (trend == null) {
+      return null;
+    }
+
+    final delta = trend.next3h;
+    if (delta <= -1) {
+      return '${delta.toStringAsFixed(0)}C em 3h';
+    }
+    if (delta >= 1) {
+      return '+${delta.toStringAsFixed(0)}C em 3h';
+    }
+    return 'temp. estavel';
+  }
+
+  IconData _temperatureTrendIcon(TemperatureTrend? trend) {
+    return switch (trend?.direction) {
+      'falling' => Icons.south_rounded,
+      'rising' => Icons.north_rounded,
+      _ => Icons.device_thermostat_rounded,
+    };
   }
 }
 

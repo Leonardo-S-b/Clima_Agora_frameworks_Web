@@ -64,6 +64,7 @@ class WeatherSnapshot {
     required this.rainChance,
     required this.condition,
     required this.fetchedAt,
+    this.temperatureTrend,
   });
 
   final double temperature;
@@ -72,6 +73,19 @@ class WeatherSnapshot {
   final int rainChance;
   final String condition;
   final DateTime fetchedAt;
+  final TemperatureTrend? temperatureTrend;
+}
+
+class TemperatureTrend {
+  const TemperatureTrend({
+    required this.next3h,
+    required this.direction,
+    required this.minNext6h,
+  });
+
+  final double next3h;
+  final String direction;
+  final double minNext6h;
 }
 
 class RouteProgress {

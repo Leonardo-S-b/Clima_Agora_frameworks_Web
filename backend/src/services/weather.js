@@ -30,7 +30,7 @@ export async function getWeatherForPoint(point) {
       longitude: lng.toString(),
       current:
         'temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,is_day,wind_speed_10m,uv_index',
-      hourly: 'precipitation_probability,weather_code',
+      hourly: 'temperature_2m,precipitation_probability,weather_code',
       daily: 'precipitation_probability_max',
       timezone: 'auto',
     }).toString();
@@ -49,6 +49,11 @@ export async function getWeatherForPoint(point) {
     const current = data.current || {};
     const hourly = data.hourly || {};
     const rainChance = resolveRainChance(current.time, hourly);
+    const temperatureTrend = resolveTemperatureTrend(
+      current.time,
+      Number(current.temperature_2m ?? 25),
+      hourly,
+    );
 
     const weather = {
       coordinates: [lat, lng],
@@ -56,6 +61,7 @@ export async function getWeatherForPoint(point) {
       humidity: Math.round(Number(current.relative_humidity_2m ?? 0)),
       windSpeed: roundOne(Number(current.wind_speed_10m ?? 0)),
       rainChance,
+      temperatureTrend,
       condition: normalizeCondition(Number(current.weather_code ?? -1)),
       uvIndex: Math.round(Number(current.uv_index ?? 0)),
       fetchedAt: new Date().toISOString(),
@@ -75,12 +81,47 @@ export async function getWeatherForPoint(point) {
       humidity: 65,
       windSpeed: 10,
       rainChance: 30,
+      temperatureTrend: {
+        next3h: 0,
+        direction: 'stable',
+        minNext6h: 25,
+      },
       condition: 'unknown',
       uvIndex: 5,
       fetchedAt: new Date().toISOString(),
       error: error.message,
     };
   }
+}
+
+function resolveTemperatureTrend(currentTime, currentTemperature, hourly = {}) {
+  const times = Array.isArray(hourly.time) ? hourly.time : [];
+  const temperatures = Array.isArray(hourly.temperature_2m)
+    ? hourly.temperature_2m
+    : [];
+
+  if (times.length === 0 || temperatures.length === 0) {
+    return {
+      next3h: 0,
+      direction: 'stable',
+      minNext6h: roundOne(currentTemperature),
+    };
+  }
+
+  const currentIndex = currentTime ? times.indexOf(currentTime) : 0;
+  const startIndex = currentIndex >= 0 ? currentIndex : 0;
+  const next3hIndex = Math.min(startIndex + 3, temperatures.length - 1);
+  const next6h = temperatures
+    .slice(startIndex, Math.min(startIndex + 7, temperatures.length))
+    .map(Number)
+    .filter(Number.isFinite);
+  const delta = roundOne(Number(temperatures[next3hIndex]) - currentTemperature);
+
+  return {
+    next3h: delta,
+    direction: delta <= -2 ? 'falling' : delta >= 2 ? 'rising' : 'stable',
+    minNext6h: roundOne(next6h.length > 0 ? Math.min(...next6h) : currentTemperature),
+  };
 }
 
 function resolveRainChance(currentTime, hourly = {}) {
