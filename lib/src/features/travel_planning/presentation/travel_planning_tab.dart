@@ -338,7 +338,7 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
           .loadSession(
             startPosition: origin,
             routePoints: trackingPlan.routePoints,
-            intermediatePoints: trackingPlan.intermediatePoints,
+            intermediatePoints: _mergeTrackingWeatherPoints(plan, trackingPlan),
             totalDistanceKm: trackingPlan.totalDistanceKm,
             estimatedDurationSeconds: trackingPlan.estimatedDuration.inSeconds,
           );
@@ -399,6 +399,45 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
           totalDistanceKm: plan.totalDistanceKm,
           estimatedDurationSeconds: plan.totalDuration.inSeconds,
         );
+  }
+
+  List<IntermediatePoint> _mergeTrackingWeatherPoints(
+    TripPlan plan,
+    RouteTrackingPlan trackingPlan,
+  ) {
+    final points = <IntermediatePoint>[...trackingPlan.intermediatePoints];
+
+    for (var index = 0; index < plan.stops.length; index++) {
+      final stop = plan.stops[index];
+      final isDestination = index == plan.stops.length - 1;
+
+      points.add(
+        IntermediatePoint(
+          index: 1000 + index,
+          coordinates: LatLng(stop.city.latitude, stop.city.longitude),
+          label: isDestination ? 'Destino: ${stop.city.name}' : stop.city.name,
+          weather: isDestination
+              ? trackingPlan.destinationWeather
+              : _toWeatherSnapshot(stop.weather),
+          distanceFromStart: plan.stops
+              .take(index + 1)
+              .fold<double>(
+                0,
+                (sum, item) => sum + item.fromPrevious.distanceKm,
+              ),
+          estimatedTimeToReach: Duration(
+            minutes: plan.stops
+                .take(index + 1)
+                .fold<int>(
+                  0,
+                  (sum, item) => sum + item.fromPrevious.duration.inMinutes,
+                ),
+          ),
+        ),
+      );
+    }
+
+    return points;
   }
 
   WeatherSnapshot _toWeatherSnapshot(CurrentWeather weather) {
@@ -962,5 +1001,4 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
       ),
     );
   }
-
 }

@@ -216,7 +216,7 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
           ),
           width: 92,
           height: 86,
-          alignment: Alignment.topCenter,
+          alignment: Alignment.center,
           child: _WeatherMarker(
             point: point,
             onTap: () {
