@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart';
 import '../../weather/domain/city.dart';
 import '../../weather/domain/current_weather.dart';
 import '../../weather/presentation/widgets/glass_card.dart';
+import '../../travel_tracking/data/route_tracking_api.dart';
 import '../../travel_tracking/models/route_tracking.dart';
 import '../../travel_tracking/providers/route_tracking_provider.dart';
 import '../../travel_tracking/widgets/route_map_widget.dart';
@@ -29,7 +30,9 @@ class TravelPlanningTab extends ConsumerStatefulWidget {
 class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
   final _repository = TravelPlanningRepository.create();
   final _aiClient = http.Client();
+  final _trackingClient = http.Client();
   late final GeminiActivityApi _aiApi;
+  late final RouteTrackingApi _trackingApi;
   final _originController = TextEditingController();
   final _stopController = TextEditingController();
   Timer? _originDebounce;
@@ -49,11 +52,14 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
   bool _loadingPlan = false;
   String? _error;
   TripPlan? _tripPlan;
+  RouteTrackingPlan? _trackingPlan;
+  String? _trackingNotice;
 
   @override
   void initState() {
     super.initState();
     _aiApi = GeminiActivityApi(_aiClient);
+    _trackingApi = RouteTrackingApi(_trackingClient);
   }
 
   @override
@@ -64,6 +70,7 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
     _stopController.dispose();
     _repository.dispose();
     _aiApi.dispose();
+    _trackingClient.close();
     super.dispose();
   }
 
@@ -283,8 +290,10 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
       if (!mounted) return;
       setState(() {
         _tripPlan = plan;
+        _trackingPlan = null;
+        _trackingNotice = null;
       });
-      _loadTrackingSession(plan, originCoords);
+      await _loadTrackingSession(plan, originCoords);
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -309,13 +318,47 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
     return (_originCity!.latitude, _originCity!.longitude);
   }
 
-  void _loadTrackingSession(TripPlan plan, (double, double) originCoords) {
+  Future<void> _loadTrackingSession(
+    TripPlan plan,
+    (double, double) originCoords,
+  ) async {
     final origin = LatLng(originCoords.$1, originCoords.$2);
+    final stops = plan.stops
+        .map((stop) => LatLng(stop.city.latitude, stop.city.longitude))
+        .toList(growable: false);
+
+    try {
+      final trackingPlan = await _trackingApi.planRoute(
+        origin: origin,
+        stops: stops,
+      );
+
+      ref.read(routeTrackingProvider.notifier).loadSession(
+            startPosition: origin,
+            routePoints: trackingPlan.routePoints,
+            intermediatePoints: trackingPlan.intermediatePoints,
+            totalDistanceKm: trackingPlan.totalDistanceKm,
+            estimatedDurationSeconds: trackingPlan.estimatedDuration.inSeconds,
+          );
+
+      if (!mounted) return;
+      setState(() {
+        _trackingPlan = trackingPlan;
+        _trackingNotice =
+            'Rota real carregada com clima atual no local, no caminho e no destino.';
+      });
+      return;
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _trackingNotice =
+            'Backend de rota real indisponivel. Mostrando rota aproximada entre as cidades.';
+      });
+    }
+
     final routePoints = <LatLng>[
       origin,
-      ...plan.stops.map(
-        (stop) => LatLng(stop.city.latitude, stop.city.longitude),
-      ),
+      ...stops,
     ];
 
     final intermediatePoints = plan.stops.asMap().entries.map((entry) {
@@ -476,6 +519,7 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
 
   Widget _buildTrackingMap() {
     final tracking = ref.watch(routeTrackingProvider);
+    final trackingPlan = _trackingPlan;
 
     return GlassCard(
       padding: const EdgeInsets.all(10),
@@ -531,10 +575,69 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
                 fontSize: 12.5,
               ),
             ),
+            if (trackingPlan != null) ...[
+              const SizedBox(height: 8),
+              _weatherSummaryRow(
+                title: 'Agora',
+                weather: trackingPlan.originWeather,
+              ),
+              const SizedBox(height: 6),
+              _weatherSummaryRow(
+                title: 'Destino',
+                weather: trackingPlan.destinationWeather,
+              ),
+            ],
+            if (_trackingNotice != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _trackingNotice!,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ],
         ],
       ),
     );
+  }
+
+  Widget _weatherSummaryRow({
+    required String title,
+    required WeatherSnapshot weather,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          _weatherIcon(weather.condition),
+          color: Colors.white.withValues(alpha: 0.92),
+          size: 18,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            '$title: ${weather.temperature.toStringAsFixed(0)}C, '
+            '${weather.rainChance}% chuva, vento ${weather.windSpeed.toStringAsFixed(0)} km/h',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.86),
+              fontSize: 12.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  IconData _weatherIcon(String condition) {
+    return switch (condition) {
+      'sunny' => Icons.wb_sunny_rounded,
+      'cloudy' => Icons.cloud_rounded,
+      'rainy' => Icons.umbrella_rounded,
+      'stormy' => Icons.thunderstorm_rounded,
+      'snowy' => Icons.ac_unit_rounded,
+      _ => Icons.cloud_queue_rounded,
+    };
   }
 
   Widget _buildOriginSelector() {

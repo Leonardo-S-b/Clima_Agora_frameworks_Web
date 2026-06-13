@@ -1,6 +1,10 @@
 import express from 'express';
 import crypto from 'crypto';
-import { calculateRoute, calculateIntermediatePoints } from '../services/routing.js';
+import {
+  calculateRoute,
+  calculateMultiStopRoute,
+  calculateIntermediatePoints,
+} from '../services/routing.js';
 import { getWeatherForPoints } from '../services/weather.js';
 import { detectClimaticAlerts } from '../services/alerts.js';
 
@@ -8,6 +12,79 @@ const router = express.Router();
 
 // Store active tracking sessions (in-memory, use Redis in production)
 const activeSessions = new Map();
+
+// POST /travel/route-tracking/plan
+router.post('/plan', async (req, res) => {
+  try {
+    const { origin, stops, mode, weatherPointCount } = req.body;
+
+    if (!isValidPoint(origin) || !Array.isArray(stops) || stops.length === 0) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        message: 'origin and at least one stop are required',
+      });
+    }
+
+    const routeWaypoints = [
+      normalizePoint(origin),
+      ...stops.map((stop) => normalizePoint(stop)),
+    ];
+
+    if (routeWaypoints.some((point) => !isValidPoint(point))) {
+      return res.status(400).json({
+        error: 'invalid_request',
+        message: 'all route points must include lat and lng',
+      });
+    }
+
+    const routeData = await calculateMultiStopRoute({
+      points: routeWaypoints,
+      mode: mode || 'driving',
+    });
+
+    const pointCount = clampInt(Number(weatherPointCount || 7), 3, 10);
+    const intermediatePoints = await calculateIntermediatePoints(
+      routeData.points,
+      pointCount,
+    );
+
+    const weatherData = await getWeatherForPoints([
+      routeWaypoints[0],
+      ...intermediatePoints,
+      routeWaypoints[routeWaypoints.length - 1],
+    ]);
+
+    const nowWeather = weatherData[0];
+    const destinationWeather = weatherData[weatherData.length - 1];
+    const routeWeather = weatherData.slice(1, -1);
+
+    const pointsWithWeather = intermediatePoints.map((point, index) => ({
+      ...point,
+      weather: routeWeather[index],
+      estimatedTimeToReach: calculateTimeToPoint(
+        routeData.durationSeconds,
+        index + 1,
+        intermediatePoints.length,
+      ),
+    }));
+
+    res.json({
+      routePoints: routeData.points,
+      intermediatePoints: pointsWithWeather,
+      originWeather: nowWeather,
+      destinationWeather,
+      totalDistanceKm: routeData.distanceMeters / 1000,
+      estimatedDurationSeconds: routeData.durationSeconds,
+      mode: routeData.profile,
+    });
+  } catch (err) {
+    console.error('[Route Plan Error]', err.message);
+    res.status(500).json({
+      error: 'server_error',
+      message: String(err.message),
+    });
+  }
+});
 
 // POST /travel/route-tracking/start
 router.post('/start', async (req, res) => {
@@ -164,4 +241,21 @@ function calculateTimeToPoint(totalDurationSeconds, pointIndex, totalPoints) {
     inHours: Math.floor((timePerPoint * pointIndex) / 3600),
     inMinutes: Math.floor(((timePerPoint * pointIndex) % 3600) / 60),
   };
+}
+
+function normalizePoint(point) {
+  return {
+    lat: Number(point?.lat ?? point?.latitude),
+    lng: Number(point?.lng ?? point?.lon ?? point?.longitude),
+  };
+}
+
+function isValidPoint(point) {
+  const normalized = normalizePoint(point);
+  return Number.isFinite(normalized.lat) && Number.isFinite(normalized.lng);
+}
+
+function clampInt(value, min, max) {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.round(value)));
 }

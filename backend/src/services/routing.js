@@ -54,6 +54,38 @@ export async function calculateRoute({ origin, destination, mode = 'driving' }) 
   }
 }
 
+export async function calculateMultiStopRoute({ points, mode = 'driving' }) {
+  if (!Array.isArray(points) || points.length < 2) {
+    throw new Error('Route requires at least origin and destination');
+  }
+
+  const routeSegments = [];
+  let distanceMeters = 0;
+  let durationSeconds = 0;
+
+  for (let index = 1; index < points.length; index += 1) {
+    const segment = await calculateRoute({
+      origin: points[index - 1],
+      destination: points[index],
+      mode,
+    });
+
+    const segmentPoints =
+      index === 1 ? segment.points : segment.points.slice(1);
+
+    routeSegments.push(...segmentPoints);
+    distanceMeters += segment.distanceMeters;
+    durationSeconds += segment.durationSeconds;
+  }
+
+  return {
+    points: routeSegments,
+    distanceMeters,
+    durationSeconds,
+    profile: normalizeProfile(mode),
+  };
+}
+
 export async function calculateIntermediatePoints(routePoints, numPoints = 5) {
   if (!Array.isArray(routePoints) || routePoints.length < 2) {
     throw new Error('Route must have at least 2 points');
