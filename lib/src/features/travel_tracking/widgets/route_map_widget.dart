@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart' as osm;
 
@@ -26,6 +29,8 @@ class RouteMapWidget extends ConsumerStatefulWidget {
 
 class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
   int? _selectedPointIndex;
+  bool _radarEnabled = false;
+  Future<_RainViewerFrame?>? _radarFrameFuture;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +56,26 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.clima_agora',
             ),
+            if (_radarEnabled)
+              FutureBuilder<_RainViewerFrame?>(
+                future: _radarFrameFuture,
+                builder: (context, snapshot) {
+                  final frame = snapshot.data;
+                  if (frame == null) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return TileLayer(
+                    urlTemplate:
+                        '${frame.host}${frame.path}/512/{z}/{x}/{y}/2/1_1.png',
+                    userAgentPackageName: 'com.example.clima_agora',
+                    maxNativeZoom: 7,
+                    tileDisplay: const TileDisplay.fadeIn(),
+                    tileBuilder: (context, tileWidget, tile) =>
+                        Opacity(opacity: 0.62, child: tileWidget),
+                  );
+                },
+              ),
             if (routePoints.isNotEmpty)
               PolylineLayer(
                 polylines: [
@@ -71,6 +96,15 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              _MapIconButton(
+                icon: _radarEnabled
+                    ? Icons.radar_rounded
+                    : Icons.radar_outlined,
+                tooltip: _radarEnabled ? 'Ocultar radar' : 'Mostrar radar',
+                selected: _radarEnabled,
+                onPressed: _toggleRadar,
+              ),
+              const SizedBox(height: 8),
               _MapIconButton(
                 icon: widget.fullscreen
                     ? Icons.close_fullscreen_rounded
@@ -116,6 +150,15 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
         ),
       ],
     );
+  }
+
+  void _toggleRadar() {
+    setState(() {
+      _radarEnabled = !_radarEnabled;
+      if (_radarEnabled) {
+        _radarFrameFuture ??= _RainViewerFrame.fetchLatest();
+      }
+    });
   }
 
   void _handleExpand() {
@@ -229,7 +272,39 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
 
     return markers;
   }
+}
 
+class _RainViewerFrame {
+  const _RainViewerFrame({required this.host, required this.path});
+
+  final String host;
+  final String path;
+
+  static Future<_RainViewerFrame?> fetchLatest() async {
+    final response = await http.get(
+      Uri.parse('https://api.rainviewer.com/public/weather-maps.json'),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return null;
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final host = (data['host'] as String?)?.trim();
+    final radar = data['radar'] as Map<String, dynamic>?;
+    final past = radar?['past'] as List<dynamic>?;
+    if (host == null || host.isEmpty || past == null || past.isEmpty) {
+      return null;
+    }
+
+    final latest = past.last as Map<String, dynamic>;
+    final path = (latest['path'] as String?)?.trim();
+    if (path == null || path.isEmpty) {
+      return null;
+    }
+
+    return _RainViewerFrame(host: host, path: path);
+  }
 }
 
 class _RouteHud extends StatelessWidget {
@@ -557,18 +632,22 @@ class _MapIconButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onPressed,
+    this.selected = false,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback? onPressed;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: Colors.black.withValues(alpha: 0.68),
+        color: selected
+            ? const Color(0xFF2563EB).withValues(alpha: 0.88)
+            : Colors.black.withValues(alpha: 0.68),
         borderRadius: BorderRadius.circular(999),
         child: InkWell(
           onTap: onPressed,
