@@ -75,7 +75,7 @@ class OsrmRouteApi {
             );
           })
           .toList(growable: false);
-    } catch {
+    } catch (_) {
       return _buildEstimatedLegs(
         originLat: originLat,
         originLon: originLon,
