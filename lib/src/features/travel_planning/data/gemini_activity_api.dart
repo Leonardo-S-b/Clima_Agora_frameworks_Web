@@ -20,7 +20,31 @@ class GeminiActivityApi {
     required String weatherLabel,
     required String daytimeLabel,
   }) {
-    return 'Você é um guia de viagem. Cidade: $cityLabel. Clima atual: $weatherLabel. Momento do dia: $daytimeLabel. Sugira 5 atividades objetivas para hoje, incluindo uma opção indoor e uma outdoor, com linguagem curta em português do Brasil.';
+    return '''
+Voce e um guia local de viagem no Brasil.
+
+Contexto:
+Cidade: $cityLabel
+Clima atual: $weatherLabel
+Momento do dia: $daytimeLabel
+
+Crie exatamente 5 sugestoes de atividades para hoje.
+
+Regras:
+- Responda somente com a lista, sem introducao e sem conclusao.
+- Nao use Markdown, asteriscos, negrito, hashtags ou emojis.
+- Cada sugestao deve ter no maximo 120 caracteres.
+- Comece cada linha com o nome da atividade, seguido de dois pontos e uma orientacao pratica.
+- Inclua pelo menos uma opcao indoor e uma outdoor.
+- Use portugues do Brasil, tom natural, objetivo e util.
+
+Formato:
+1. Nome da atividade: orientacao pratica.
+2. Nome da atividade: orientacao pratica.
+3. Nome da atividade: orientacao pratica.
+4. Nome da atividade: orientacao pratica.
+5. Nome da atividade: orientacao pratica.
+''';
   }
 
   Future<String> suggest({required String prompt}) async {

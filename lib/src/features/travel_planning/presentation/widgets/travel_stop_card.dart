@@ -270,8 +270,10 @@ class _AiSuggestionDialogState extends State<_AiSuggestionDialog> {
   List<String> _parseSuggestionItems(String rawText) {
     final lines = rawText
         .split('\n')
-        .map((line) => line.replaceAll(RegExp(r'^[•\-\d\.\)\s]+'), '').trim())
+        .map(_cleanSuggestionLine)
         .where((line) => line.isNotEmpty)
+        .where(_looksLikeActivitySuggestion)
+        .take(5)
         .toList(growable: false);
 
     if (lines.length >= 2) {
@@ -280,15 +282,38 @@ class _AiSuggestionDialogState extends State<_AiSuggestionDialog> {
 
     final paragraphs = rawText
         .split(RegExp(r'\n{2,}'))
-        .map((chunk) => chunk.trim())
+        .map(_cleanSuggestionLine)
         .where((chunk) => chunk.isNotEmpty)
+        .where(_looksLikeActivitySuggestion)
+        .take(5)
         .toList(growable: false);
 
     if (paragraphs.isNotEmpty) {
       return paragraphs;
     }
 
-    return rawText.isEmpty ? <String>[] : <String>[rawText.trim()];
+    final cleanText = _cleanSuggestionLine(rawText);
+    return cleanText.isEmpty ? <String>[] : <String>[cleanText];
+  }
+
+  String _cleanSuggestionLine(String value) {
+    return value
+        .replaceAll(RegExp(r'^[•\-\*\d\.\)\s]+'), '')
+        .replaceAll(RegExp(r'\*\*?'), '')
+        .replaceAll(RegExp(r'[_`#]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  bool _looksLikeActivitySuggestion(String value) {
+    final lower = value.toLowerCase();
+    if (lower.startsWith('aqui estao') || lower.startsWith('aqui estão')) {
+      return false;
+    }
+    if (lower.startsWith('sugestoes') || lower.startsWith('sugestões')) {
+      return false;
+    }
+    return value.contains(':') || value.length <= 140;
   }
 }
 
