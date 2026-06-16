@@ -8,6 +8,8 @@ class RouteTrackingState {
     required this.progress,
     required this.isTracking,
     required this.startedAt,
+    required this.routeQuality,
+    this.notice,
   });
 
   final LatLng userPosition;
@@ -16,6 +18,8 @@ class RouteTrackingState {
   final RouteProgress progress;
   final bool isTracking;
   final DateTime? startedAt;
+  final RouteQuality routeQuality;
+  final String? notice;
 
   RouteTrackingState copyWith({
     LatLng? userPosition,
@@ -24,6 +28,8 @@ class RouteTrackingState {
     RouteProgress? progress,
     bool? isTracking,
     DateTime? startedAt,
+    RouteQuality? routeQuality,
+    String? notice,
   }) {
     return RouteTrackingState(
       userPosition: userPosition ?? this.userPosition,
@@ -32,9 +38,15 @@ class RouteTrackingState {
       progress: progress ?? this.progress,
       isTracking: isTracking ?? this.isTracking,
       startedAt: startedAt ?? this.startedAt,
+      routeQuality: routeQuality ?? this.routeQuality,
+      notice: notice ?? this.notice,
     );
   }
 }
+
+enum RouteQuality { real, approximate }
+
+enum RouteMarkerKind { weather, stop, destination }
 
 class IntermediatePoint {
   const IntermediatePoint({
@@ -44,6 +56,7 @@ class IntermediatePoint {
     required this.weather,
     required this.distanceFromStart,
     required this.estimatedTimeToReach,
+    this.kind = RouteMarkerKind.weather,
     this.suggestedActivities = const [],
   });
 
@@ -53,6 +66,7 @@ class IntermediatePoint {
   final WeatherSnapshot weather;
   final double distanceFromStart;
   final Duration estimatedTimeToReach;
+  final RouteMarkerKind kind;
   final List<ActivitySuggestion> suggestedActivities;
 }
 

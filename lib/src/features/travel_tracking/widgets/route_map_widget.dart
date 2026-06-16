@@ -82,7 +82,12 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
                   Polyline(
                     points: routePoints,
                     strokeWidth: widget.compact ? 4 : 5,
-                    color: const Color(0xFF22B8E8),
+                    color: state?.routeQuality == RouteQuality.approximate
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFF22B8E8),
+                    pattern: state?.routeQuality == RouteQuality.approximate
+                        ? StrokePattern.dashed(segments: const [12, 8])
+                        : const StrokePattern.solid(),
                   ),
                 ],
               ),
@@ -90,6 +95,8 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
           ],
         ),
         if (state != null) _RouteHud(state: state, compact: widget.compact),
+        if (state?.routeQuality == RouteQuality.approximate)
+          _ApproximateRouteBanner(compact: widget.compact),
         Positioned(
           top: 10,
           right: 10,
@@ -246,14 +253,15 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
 
     for (final point in state.intermediatePoints) {
       final selected = _selectedPointIndex == point.index;
+      final markerSize = _markerSize(point, selected);
       markers.add(
         Marker(
           point: osm.LatLng(
             point.coordinates.latitude,
             point.coordinates.longitude,
           ),
-          width: selected ? 222 : 92,
-          height: selected ? 164 : 86,
+          width: markerSize.$1,
+          height: markerSize.$2,
           alignment: Alignment.topCenter,
           child: _WeatherMarker(
             point: point,
@@ -271,6 +279,18 @@ class _RouteMapWidgetState extends ConsumerState<RouteMapWidget> {
     }
 
     return markers;
+  }
+
+  (double, double) _markerSize(IntermediatePoint point, bool selected) {
+    if (selected) {
+      return (point.kind == RouteMarkerKind.weather ? 222 : 238, 164);
+    }
+
+    return switch (point.kind) {
+      RouteMarkerKind.weather => (92, 86),
+      RouteMarkerKind.stop => (118, 78),
+      RouteMarkerKind.destination => (132, 82),
+    };
   }
 }
 
@@ -368,26 +388,104 @@ class _RouteHud extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 const SizedBox(height: 8),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
-                    Icon(
-                      Icons.cloud_queue_rounded,
-                      color: Colors.white.withValues(alpha: 0.72),
-                      size: 14,
+                    _HudPill(
+                      icon: Icons.cloud_queue_rounded,
+                      label:
+                          '${state.intermediatePoints.where((point) => point.kind == RouteMarkerKind.weather).length} clima',
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      '${state.intermediatePoints.length} pontos climaticos',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.82),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    _HudPill(
+                      icon: state.routeQuality == RouteQuality.real
+                          ? Icons.alt_route_rounded
+                          : Icons.warning_amber_rounded,
+                      label: state.routeQuality == RouteQuality.real
+                          ? 'rota real'
+                          : 'aproximada',
+                      alert: state.routeQuality == RouteQuality.approximate,
                     ),
                   ],
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HudPill extends StatelessWidget {
+  const _HudPill({required this.icon, required this.label, this.alert = false});
+
+  final IconData icon;
+  final String label;
+  final bool alert;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = alert ? const Color(0xFFFBBF24) : Colors.white;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color.withValues(alpha: 0.82), size: 14),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: TextStyle(
+            color: color.withValues(alpha: 0.88),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ApproximateRouteBanner extends StatelessWidget {
+  const _ApproximateRouteBanner({required this.compact});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 10,
+      right: compact ? 58 : 70,
+      bottom: 38,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFF7C2D12).withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFFBBF24)),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFFBBF24),
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Rota aproximada. Recalcule quando o backend de rotas voltar.',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -408,7 +506,7 @@ class _WeatherMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (color, icon) = _weatherStyle(point.weather.condition);
+    final (color, icon) = _markerStyle(point);
 
     return Material(
       color: Colors.transparent,
@@ -420,17 +518,36 @@ class _WeatherMarker extends StatelessWidget {
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _MarkerChip(
-                    color: color,
-                    icon: icon,
-                    label: '${point.weather.temperature.toStringAsFixed(0)}C',
-                  ),
+                  _MarkerChip(color: color, icon: icon, label: _chipLabel),
                   const SizedBox(height: 2),
-                  _PointLabel(label: point.label),
+                  _PointLabel(
+                    label: point.label,
+                    accent: point.kind != RouteMarkerKind.weather,
+                  ),
                 ],
               ),
       ),
     );
+  }
+
+  String get _chipLabel {
+    return switch (point.kind) {
+      RouteMarkerKind.weather =>
+        '${point.weather.temperature.toStringAsFixed(0)}C',
+      RouteMarkerKind.stop => 'Parada',
+      RouteMarkerKind.destination => 'Destino',
+    };
+  }
+
+  (Color, IconData) _markerStyle(IntermediatePoint point) {
+    if (point.kind == RouteMarkerKind.stop) {
+      return (const Color(0xFF7C3AED), Icons.place_rounded);
+    }
+    if (point.kind == RouteMarkerKind.destination) {
+      return (const Color(0xFF16A34A), Icons.flag_rounded);
+    }
+
+    return _weatherStyle(point.weather.condition);
   }
 
   (Color, IconData) _weatherStyle(String condition) {
@@ -628,9 +745,10 @@ class _WeatherMetricChip extends StatelessWidget {
 }
 
 class _PointLabel extends StatelessWidget {
-  const _PointLabel({required this.label});
+  const _PointLabel({required this.label, this.accent = false});
 
   final String label;
+  final bool accent;
 
   @override
   Widget build(BuildContext context) {
@@ -640,6 +758,9 @@ class _PointLabel extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(999),
+        border: accent
+            ? Border.all(color: Colors.white.withValues(alpha: 0.42))
+            : null,
       ),
       child: Text(
         label,

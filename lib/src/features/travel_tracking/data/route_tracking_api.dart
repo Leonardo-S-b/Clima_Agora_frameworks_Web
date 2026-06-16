@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -39,16 +40,39 @@ class RouteTrackingApi {
     int weatherPointCount = 7,
   }) async {
     final uri = Uri.parse('$_backendUrl/travel/route-tracking/plan');
-    final response = await _client.post(
-      uri,
-      headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'origin': _pointToJson(origin),
-        'stops': stops.map(_pointToJson).toList(growable: false),
-        'mode': 'driving',
-        'weatherPointCount': weatherPointCount,
-      }),
-    );
+    final body = jsonEncode({
+      'origin': _pointToJson(origin),
+      'stops': stops.map(_pointToJson).toList(growable: false),
+      'mode': 'driving',
+      'weatherPointCount': weatherPointCount,
+    });
+    http.Response? response;
+    Object? lastError;
+
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        response = await _client
+            .post(
+              uri,
+              headers: const {'Content-Type': 'application/json'},
+              body: body,
+            )
+            .timeout(const Duration(seconds: 45));
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          break;
+        }
+      } catch (error) {
+        lastError = error;
+      }
+
+      if (attempt < 2) {
+        await Future<void>.delayed(Duration(milliseconds: 550 * (attempt + 1)));
+      }
+    }
+
+    if (response == null) {
+      throw Exception('Falha ao calcular rota real: $lastError');
+    }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception('Falha ao calcular rota real: ${response.statusCode}');

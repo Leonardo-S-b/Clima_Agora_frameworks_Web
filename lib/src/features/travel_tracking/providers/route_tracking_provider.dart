@@ -9,8 +9,8 @@ import '../services/location_service.dart';
 
 final routeTrackingProvider =
     StateNotifierProvider<RouteTrackingNotifier, RouteTrackingState?>(
-  (ref) => RouteTrackingNotifier(),
-);
+      (ref) => RouteTrackingNotifier(),
+    );
 
 class RouteTrackingNotifier extends StateNotifier<RouteTrackingState?> {
   RouteTrackingNotifier() : super(null);
@@ -25,6 +25,8 @@ class RouteTrackingNotifier extends StateNotifier<RouteTrackingState?> {
     required List<IntermediatePoint> intermediatePoints,
     required double totalDistanceKm,
     required int estimatedDurationSeconds,
+    RouteQuality routeQuality = RouteQuality.real,
+    String? notice,
   }) {
     state = RouteTrackingState(
       userPosition: startPosition,
@@ -40,6 +42,8 @@ class RouteTrackingNotifier extends StateNotifier<RouteTrackingState?> {
       ),
       isTracking: false,
       startedAt: null,
+      routeQuality: routeQuality,
+      notice: notice,
     );
   }
 
@@ -53,11 +57,11 @@ class RouteTrackingNotifier extends StateNotifier<RouteTrackingState?> {
       startedAt: state!.startedAt ?? DateTime.now(),
     );
 
-    _positionSubscription = _locationService.getPositionStream().listen(
-      (position) {
-        updateUserPosition(LatLng(position.latitude, position.longitude));
-      },
-    );
+    _positionSubscription = _locationService.getPositionStream().listen((
+      position,
+    ) {
+      updateUserPosition(LatLng(position.latitude, position.longitude));
+    });
   }
 
   Future<void> stopTracking() async {
@@ -91,7 +95,8 @@ class RouteTrackingNotifier extends StateNotifier<RouteTrackingState?> {
     LatLng userPosition,
     RouteTrackingState current,
   ) {
-    if (current.routePoints.length < 2 || current.progress.totalDistanceKm <= 0) {
+    if (current.routePoints.length < 2 ||
+        current.progress.totalDistanceKm <= 0) {
       return current.progress;
     }
 

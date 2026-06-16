@@ -341,6 +341,9 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
             intermediatePoints: _mergeTrackingWeatherPoints(plan, trackingPlan),
             totalDistanceKm: trackingPlan.totalDistanceKm,
             estimatedDurationSeconds: trackingPlan.estimatedDuration.inSeconds,
+            routeQuality: RouteQuality.real,
+            notice:
+                'Rota real com paradas, clima no caminho e destino carregada.',
           );
 
       if (!mounted) return;
@@ -386,6 +389,9 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
                     (sum, item) => sum + item.fromPrevious.duration.inMinutes,
                   ),
             ),
+            kind: entry.key == plan.stops.length - 1
+                ? RouteMarkerKind.destination
+                : RouteMarkerKind.stop,
           );
         })
         .toList(growable: false);
@@ -398,6 +404,9 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
           intermediatePoints: intermediatePoints,
           totalDistanceKm: plan.totalDistanceKm,
           estimatedDurationSeconds: plan.totalDuration.inSeconds,
+          routeQuality: RouteQuality.approximate,
+          notice:
+              'Rota aproximada: backend/OSRM indisponivel. O caminho real e o GPS podem ficar imprecisos.',
         );
   }
 
@@ -407,16 +416,21 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
   ) {
     final points = <IntermediatePoint>[...trackingPlan.intermediatePoints];
 
-    if (plan.stops.isNotEmpty) {
-      final index = plan.stops.length - 1;
-      final stop = plan.stops[index];
-
+    for (final entry in plan.stops.asMap().entries) {
+      final index = entry.key;
+      final stop = entry.value;
+      final isDestination = index == plan.stops.length - 1;
+      final fallbackWeather = stop.fromPrevious.routeWeather ?? stop.weather;
       points.add(
         IntermediatePoint(
           index: 1000 + index,
           coordinates: LatLng(stop.city.latitude, stop.city.longitude),
-          label: 'Destino: ${stop.city.name}',
-          weather: trackingPlan.destinationWeather,
+          label: isDestination
+              ? 'Destino: ${stop.city.name}'
+              : 'Parada: ${stop.city.name}',
+          weather: isDestination
+              ? trackingPlan.destinationWeather
+              : _toWeatherSnapshot(fallbackWeather),
           distanceFromStart: plan.stops
               .take(index + 1)
               .fold<double>(
@@ -431,6 +445,9 @@ class _TravelPlanningTabState extends ConsumerState<TravelPlanningTab> {
                   (sum, item) => sum + item.fromPrevious.duration.inMinutes,
                 ),
           ),
+          kind: isDestination
+              ? RouteMarkerKind.destination
+              : RouteMarkerKind.stop,
         ),
       );
     }
