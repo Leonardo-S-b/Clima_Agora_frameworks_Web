@@ -268,13 +268,26 @@ class _AiSuggestionDialogState extends State<_AiSuggestionDialog> {
   }
 
   List<String> _parseSuggestionItems(String rawText) {
-    final lines = rawText
-        .split('\n')
-        .map(_cleanSuggestionLine)
-        .where((line) => line.isNotEmpty)
-        .where(_looksLikeActivitySuggestion)
-        .take(5)
-        .toList(growable: false);
+    final lines = <String>[];
+
+    for (final rawLine in rawText.split('\n')) {
+      final cleanLine = _cleanSuggestionLine(rawLine);
+      if (cleanLine.isEmpty || !_looksLikeActivitySuggestion(cleanLine)) {
+        continue;
+      }
+
+      if (cleanLine.contains(':')) {
+        lines.add(cleanLine);
+      } else if (lines.isNotEmpty) {
+        lines[lines.length - 1] = '${lines.last} $cleanLine';
+      } else {
+        lines.add(cleanLine);
+      }
+
+      if (lines.length == 5) {
+        break;
+      }
+    }
 
     if (lines.length >= 2) {
       return lines;
@@ -300,6 +313,7 @@ class _AiSuggestionDialogState extends State<_AiSuggestionDialog> {
     return value
         .replaceAll(RegExp(r'^[•\-\*\d\.\)\s]+'), '')
         .replaceAll(RegExp(r'\*\*?'), '')
+        .replaceAll(RegExp(r'^\*\s*'), '')
         .replaceAll(RegExp(r'[_`#]'), '')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
@@ -307,6 +321,9 @@ class _AiSuggestionDialogState extends State<_AiSuggestionDialog> {
 
   bool _looksLikeActivitySuggestion(String value) {
     final lower = value.toLowerCase();
+    if (lower.startsWith('ola') || lower.startsWith('olá')) {
+      return false;
+    }
     if (lower.startsWith('aqui estao') || lower.startsWith('aqui estão')) {
       return false;
     }
