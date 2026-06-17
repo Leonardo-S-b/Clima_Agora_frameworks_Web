@@ -108,7 +108,7 @@ app.post('/travel/suggestions', travelSuggestionsLimiter, async (req, res) => {
       });
     }
 
-    return res.json({ text: text.trim() });
+    return res.json({ text: normalizeSuggestionText(text) });
   } catch (error) {
     return res.status(500).json({
       error: 'internal_error',
@@ -121,3 +121,46 @@ app.post('/travel/suggestions', travelSuggestionsLimiter, async (req, res) => {
 app.listen(port, () => {
   console.log(`AI backend online na porta ${port}`);
 });
+
+function normalizeSuggestionText(value) {
+  const items = [];
+
+  for (const rawLine of String(value).split('\n')) {
+    const line = cleanSuggestionLine(rawLine);
+    if (!line || isIntroLine(line)) {
+      continue;
+    }
+
+    items.push(line);
+    if (items.length === 5) {
+      break;
+    }
+  }
+
+  const result = items.length > 0 ? items : [cleanSuggestionLine(value)];
+  return result.filter(Boolean).join('\n');
+}
+
+function cleanSuggestionLine(value) {
+  return String(value)
+    .replace(/^[•\-*\d.)\s]+/u, '')
+    .replace(/\*\*/g, '')
+    .replace(/[*_`#]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isIntroLine(value) {
+  const normalized = value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  return (
+    normalized.startsWith('ola') ||
+    normalized.startsWith('aqui estao') ||
+    normalized.startsWith('sugestoes') ||
+    normalized.includes('aqui estao 5') ||
+    normalized.includes('5 sugestoes objetivas')
+  );
+}
