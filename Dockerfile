@@ -87,7 +87,7 @@ RUN flutter pub get \
       echo "AI_BACKEND_URL inválida para build de produção: ${AI_BACKEND_URL}" && exit 1 ;; \
     *) true ;; \
   esac \
-  && flutter build web --release --dart-define=AI_BACKEND_URL=${AI_BACKEND_URL}
+  && flutter build web --release --pwa-strategy=none --dart-define=AI_BACKEND_URL=${AI_BACKEND_URL}
 
 FROM ${NGINX_IMAGE} AS web-prod
 WORKDIR /usr/share/nginx/html
